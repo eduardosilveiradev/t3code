@@ -1125,17 +1125,31 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   mask-image: linear-gradient(to right, #000 12%, transparent 30%, transparent 70%, #000 88%);
 }
 /* Blurred behind an open thread, clear on the new chat page. The blur is a static layer over
-   the canvas that fades in, so the change costs an opacity transition, not a re-blur per frame. */
-.workspace-backdrop::after {
-  content: "";
+   the canvas that fades in, so the change costs an opacity transition, not a re-blur per frame.
+   Each route mounts its own pane, so a new backdrop starts from the state the last one left
+   (data-was-blurred) and transitions from there. */
+.workspace-backdrop-blur {
   position: absolute;
   inset: 0;
   backdrop-filter: blur(14px);
   opacity: 0;
   transition: opacity 700ms var(--ease-in-out-strong);
 }
-[data-slot="sidebar-inset"]:has([data-assistant-citation-viewport]) > .workspace-backdrop::after {
+[data-slot="sidebar-inset"]:has([data-assistant-citation-viewport])
+  > .workspace-backdrop
+  .workspace-backdrop-blur {
   opacity: 1;
+}
+/* Same selector weight as the rule above, or it would win over the starting style. */
+@starting-style {
+  [data-slot="sidebar-inset"]:has([data-assistant-citation-viewport])
+    > .workspace-backdrop:not([data-was-blurred])
+    .workspace-backdrop-blur {
+    opacity: 0;
+  }
+  .workspace-backdrop[data-was-blurred] .workspace-backdrop-blur {
+    opacity: 1;
+  }
 }
 /* The picture also eases back a touch as it blurs, so the thread reads as a layer in front. */
 @media (prefers-reduced-motion: no-preference) {
@@ -1146,6 +1160,16 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     > .workspace-backdrop
     .workspace-backdrop-canvas {
     transform: scale(1.04);
+  }
+  @starting-style {
+    [data-slot="sidebar-inset"]:has([data-assistant-citation-viewport])
+      > .workspace-backdrop:not([data-was-blurred])
+      .workspace-backdrop-canvas {
+      transform: none;
+    }
+    .workspace-backdrop[data-was-blurred] .workspace-backdrop-canvas {
+      transform: scale(1.04);
+    }
   }
   /* New chat and an open thread swap in place: the incoming one rises in, out of a soft blur. */
   [data-assistant-citation-viewport],

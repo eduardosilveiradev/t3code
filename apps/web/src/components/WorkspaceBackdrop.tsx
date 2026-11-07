@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import horizonUrl from "~/assets/backdrop-horizon.jpg";
 import { useClientSettings } from "~/hooks/useSettings";
@@ -14,11 +14,16 @@ const REDRAW_DEBOUNCE_MS = 120;
 
 /** The horizon photo, decoded once and shared by the pane and the settings previews. */
 let horizonImage: Promise<HTMLImageElement> | null = null;
+/** Set once decoded, so a pane mounted later paints the photo in its first frame. */
+let horizonDecoded: HTMLImageElement | null = null;
 function loadHorizon(): Promise<HTMLImageElement> {
   horizonImage ??= new Promise((resolve, reject) => {
     const img = new Image();
     img.decoding = "async";
-    img.onload = () => resolve(img);
+    img.onload = () => {
+      horizonDecoded = img;
+      resolve(img);
+    };
     img.onerror = () => {
       horizonImage = null;
       reject(new Error("horizon backdrop failed to load"));
@@ -49,9 +54,37 @@ function photoCells(img: HTMLImageElement, cols: number, rows: number): Uint8Cla
 export function WorkspaceBackdrop() {
   const art = useClientSettings((settings) => settings.workspaceBackdrop);
   if (art === "none") return null;
+  return <Backdrop art={art} />;
+}
+
+/** Whether the last pane's backdrop was blurred (a thread was open) when it went away. */
+let lastBlurred = false;
+
+/**
+ * Each route has its own pane, so going from new chat to a thread mounts a fresh backdrop. It
+ * starts in the state the old one left (`data-was-blurred`, read by `@starting-style` in CSS)
+ * and transitions from there, instead of appearing already blurred.
+ */
+function Backdrop({ art }: { art: WorkspaceBackdropArt }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [wasBlurred] = useState(() => lastBlurred);
+  // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- records this pane's blur state as its DOM goes away, for the next route's pane; sets no state
+  useLayoutEffect(() => {
+    const el = ref.current;
+    // Layout cleanup runs before React detaches the DOM, so the pane is still there to read.
+    return () => {
+      lastBlurred = !!el?.parentElement?.querySelector("[data-assistant-citation-viewport]");
+    };
+  }, []);
   return (
-    <div aria-hidden className="workspace-backdrop">
+    <div
+      ref={ref}
+      aria-hidden
+      className="workspace-backdrop"
+      data-was-blurred={wasBlurred || undefined}
+    >
       <BackdropCanvas art={art} />
+      <div className="workspace-backdrop-blur" />
     </div>
   );
 }
@@ -69,12 +102,13 @@ export function BackdropCanvas({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
+  // A layout effect, so a pane that mounts on navigation paints the art in its first frame.
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- keeps the canvas bitmap in step with its host's size and the decoded photo; no React state involved
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     const host = canvas?.parentElement;
     if (!canvas || !host) return;
-    let photo: HTMLImageElement | null = null;
+    let photo: HTMLImageElement | null = art === "horizon" ? horizonDecoded : null;
     let alive = true;
 
     const draw = (force = false) => {
@@ -109,7 +143,7 @@ export function BackdropCanvas({
 
     // A new art choice must repaint even at the same size.
     draw(true);
-    if (art === "horizon") {
+    if (art === "horizon" && !photo) {
       loadHorizon()
         .then((img) => {
           if (!alive) return;
