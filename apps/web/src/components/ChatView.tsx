@@ -3582,6 +3582,7 @@ export default function ChatView(props: ChatViewProps) {
                   ) : null}
                   <div
                     ref={draftHeroComposerAnchorRef}
+                    data-composer-anchor
                     className="relative z-10"
                     style={
                       forceExpandedMobileComposer

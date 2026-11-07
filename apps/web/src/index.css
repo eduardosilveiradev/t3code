@@ -16,6 +16,50 @@
   }
 }
 
+/* Desktop page changes (router.ts, type t3-page). The sidebar and the backdrop stay live in the
+   root, so the backdrop's own blur transition plays underneath. Each part of the pane snapshots on
+   its own: the old one lifts away, the new one rises in out of a soft blur. The composer has its
+   own name, so it travels from where it was to where it goes instead of fading. */
+html:active-view-transition-type(t3-page) {
+  [data-slot="sidebar-inset"] > :not(.workspace-backdrop) {
+    view-transition-name: match-element;
+    view-transition-class: t3-page;
+  }
+  [data-composer-anchor] {
+    view-transition-name: t3-composer;
+  }
+}
+html:active-view-transition-type(t3-page)::view-transition-old(root),
+html:active-view-transition-type(t3-page)::view-transition-new(root) {
+  animation: none;
+}
+html:active-view-transition-type(t3-page)::view-transition-group(*.t3-page) {
+  animation: none;
+}
+html:active-view-transition-type(t3-page)::view-transition-old(*.t3-page) {
+  animation: t3-page-out 180ms var(--ease-out-strong) both;
+}
+html:active-view-transition-type(t3-page)::view-transition-new(*.t3-page) {
+  animation: t3-page-in 460ms var(--ease-out-strong) both;
+}
+html:active-view-transition-type(t3-page)::view-transition-group(t3-composer) {
+  animation-duration: 460ms;
+  animation-timing-function: var(--ease-in-out-strong);
+}
+@keyframes t3-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@keyframes t3-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(4px);
+  }
+}
+
 /* On mobile, morph the expanded hero composer into the compact docked
    composer while it moves; the rest of the app remains visually stationary. */
 html[data-mobile-composer-route-transition="true"]::view-transition-old(root),
