@@ -1137,6 +1137,10 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   mask-size: 3px 3px;
   mask-composite: intersect;
 }
+/* The photo is solid cells in a checker, as the panel it comes from; no dot gaps. */
+.workspace-backdrop-canvas[data-art="horizon"] {
+  mask-image: none;
+}
 @media (prefers-contrast: more), (forced-colors: active) {
   .workspace-backdrop {
     display: none;

@@ -6,7 +6,7 @@ import { observeResize } from "~/lib/observeResize";
 import {
   coverSourceRect,
   renderWorkspaceBackdropCells,
-  WORKSPACE_BACKDROP_CELL_PX,
+  backdropCellPx,
   type WorkspaceBackdropArt,
 } from "./WorkspaceBackdrop.logic";
 
@@ -77,16 +77,17 @@ export function BackdropCanvas({
     let photo: HTMLImageElement | null = null;
     let alive = true;
 
+    const cell = backdropCellPx(art);
     const draw = (force = false) => {
       const { width, height } = host.getBoundingClientRect();
-      const cols = Math.max(1, Math.ceil(width / WORKSPACE_BACKDROP_CELL_PX));
-      const rows = Math.max(1, Math.ceil(height / WORKSPACE_BACKDROP_CELL_PX));
+      const cols = Math.max(1, Math.ceil(width / cell));
+      const rows = Math.max(1, Math.ceil(height / cell));
       if (!force && canvas.width === cols && canvas.height === rows) return;
       if (art === "horizon" && !photo) return;
       canvas.width = cols;
       canvas.height = rows;
-      canvas.style.width = `${cols * WORKSPACE_BACKDROP_CELL_PX}px`;
-      canvas.style.height = `${rows * WORKSPACE_BACKDROP_CELL_PX}px`;
+      canvas.style.width = `${cols * cell}px`;
+      canvas.style.height = `${rows * cell}px`;
       const cells = renderWorkspaceBackdropCells(
         cols,
         rows,
@@ -120,5 +121,5 @@ export function BackdropCanvas({
     };
   }, [art, guardText]);
 
-  return <canvas ref={canvasRef} className="workspace-backdrop-canvas" />;
+  return <canvas ref={canvasRef} className="workspace-backdrop-canvas" data-art={art} />;
 }

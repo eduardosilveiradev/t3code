@@ -64,6 +64,8 @@ describe("renderWorkspaceBackdropCells", () => {
         blue += pixels[(y * cols + x) * 4 + 2]!;
       }
     expect(red).toBeGreaterThan(blue * 2);
+    // Solid cells: every one is opaque, even the black ones.
+    for (let i = 3; i < pixels.length; i += 4) expect(pixels[i]).toBe(255);
   });
 });
 

@@ -6,7 +6,11 @@ type Rgb = readonly [number, number, number];
 type BandPalette = ReadonlyArray<readonly [position: number, color: Rgb]>;
 
 /** CSS pixels per dither cell: a 2px dot plus a 1px gap (the gap is a CSS mask). */
-export const WORKSPACE_BACKDROP_CELL_PX = 3;
+const WORKSPACE_BACKDROP_CELL_PX = 3;
+
+/** CSS pixels per cell for an art: the photo is solid cells with no gap, so it goes finer. */
+export const backdropCellPx = (art: WorkspaceBackdropArt) =>
+  art === "horizon" ? 2 : WORKSPACE_BACKDROP_CELL_PX;
 
 const BAND_PALETTES: Record<Exclude<WorkspaceBackdropArt, "horizon">, BandPalette> = {
   aurora: [
@@ -70,16 +74,45 @@ const textGuard = (u: number, floor = 0.2) =>
 /** The photo is darker than the generated bands, so its reading column needs less dimming. */
 const PHOTO_GUARD_FLOOR = 0.2;
 
-/** Where the slice of a tall photo sits, 0 = top, 1 = bottom: on the horizon band. */
+/** Where a crop of the photo sits when the pane is taller than it, 0 = top, 1 = bottom. */
 const PHOTO_ANCHOR_Y = 0.42;
 
-/** Brightens the photo a touch: dithering to 3 levels per channel reads darker than the source. */
-const PHOTO_GAIN = 1.15;
+/** Photo dither, after the Devin panel: solid cells, a 4x4 Bayer (it reads as a fine checker), 6 levels a channel. */
+const BAYER_4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+const PHOTO_LEVELS = 6;
+/** Muted and a little darker than the source, as the panel is. */
+const PHOTO_SATURATION = 0.8;
+const PHOTO_EXPOSURE = 0.78;
+
+/** The photo art: every cell solid (opaque), dimmed in the reading column like the bands. */
+function renderPhotoCells(
+  cols: number,
+  rows: number,
+  photo: Uint8ClampedArray,
+  guardText: boolean,
+) {
+  const out = new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
+  const steps = PHOTO_LEVELS - 1;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < cols; x++) {
+      const i = (y * cols + x) * 4;
+      const gain = PHOTO_EXPOSURE * (guardText ? textGuard(x / cols, PHOTO_GUARD_FLOOR) : 1);
+      const grey = (photo[i]! + photo[i + 1]! + photo[i + 2]!) / 3;
+      const threshold = (BAYER_4[(y & 3) * 4 + (x & 3)]! + 0.5) / 16;
+      for (let c = 0; c < 3; c++) {
+        const muted = grey + (photo[i + c]! - grey) * PHOTO_SATURATION;
+        const v = Math.min(1, Math.max(0, (muted / 255) * gain)) * steps;
+        out[i + c] = ((Math.floor(v) + (v - Math.floor(v) > threshold ? 1 : 0)) / steps) * 255;
+      }
+      out[i + 3] = 255;
+    }
+  }
+  return out;
+}
 
 /**
  * Where to read a `srcW`×`srcH` image so it covers a `cols`×`rows` grid without stretching
- * (CSS `object-fit: cover`). A wide window shows a horizontal slice of the tall photo; it is
- * taken just above the middle, where the bright horizon band crosses the frame.
+ * (CSS `object-fit: cover`), centred across and a little above centre down.
  */
 export function coverSourceRect(srcW: number, srcH: number, cols: number, rows: number) {
   const scale = Math.max(cols / srcW, rows / srcH);
@@ -101,9 +134,13 @@ export function renderWorkspaceBackdropCells(
   photo?: Uint8ClampedArray,
   { guardText = true }: { guardText?: boolean } = {},
 ): Uint8ClampedArray<ArrayBuffer> {
+  if (art === "horizon") {
+    if (!photo || photo.length < cols * rows * 4)
+      return new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
+    return renderPhotoCells(cols, rows, photo, guardText);
+  }
   const out = new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
-  if (art === "horizon" && (!photo || photo.length < cols * rows * 4)) return out;
-  const palette = art === "horizon" ? null : BAND_PALETTES[art];
+  const palette = BAND_PALETTES[art];
   // Measure the band in the shorter axis so it keeps its thickness at any aspect ratio.
   const scale = Math.min(cols, rows);
   const color: [number, number, number] = [0, 0, 0];
@@ -111,22 +148,14 @@ export function renderWorkspaceBackdropCells(
     for (let x = 0; x < cols; x++) {
       const u = x / cols;
       const i = (y * cols + x) * 4;
-      let strength: number;
-      if (palette) {
-        const centre = (0.06 + 0.38 * u + 0.16 * u * u) * rows;
-        const d = (y - centre) / (BAND_WIDTH * scale);
-        const glow = Math.exp(-d * d) + 0.18 * Math.exp(-Math.abs(d) * 0.9);
-        strength = Math.min(1, glow * (guardText ? textGuard(u) : 1) * (0.75 + 0.25 * u));
-        const c = sample(palette, Math.max(-1, Math.min(1, d / 2.4)));
-        color[0] = c[0];
-        color[1] = c[1];
-        color[2] = c[2];
-      } else {
-        strength = Math.min(1, (guardText ? textGuard(u, PHOTO_GUARD_FLOOR) : 1) * PHOTO_GAIN);
-        color[0] = photo![i]!;
-        color[1] = photo![i + 1]!;
-        color[2] = photo![i + 2]!;
-      }
+      const centre = (0.06 + 0.38 * u + 0.16 * u * u) * rows;
+      const d = (y - centre) / (BAND_WIDTH * scale);
+      const glow = Math.exp(-d * d) + 0.18 * Math.exp(-Math.abs(d) * 0.9);
+      const strength = Math.min(1, glow * (guardText ? textGuard(u) : 1) * (0.75 + 0.25 * u));
+      const c = sample(palette, Math.max(-1, Math.min(1, d / 2.4)));
+      color[0] = c[0];
+      color[1] = c[1];
+      color[2] = c[2];
       const threshold = (BAYER_8[(y & 7) * 8 + (x & 7)]! + 0.5) / 64;
       let lit = false;
       for (let c = 0; c < 3; c++) {
@@ -136,9 +165,7 @@ export function renderWorkspaceBackdropCells(
         if (level > 0) lit = true;
       }
       if (!lit && hash(x, y) < NOISE_DENSITY) {
-        const tint: Rgb = palette
-          ? sample(palette, hash(y, x) * 2 - 1)
-          : [color[0] * 3, color[1] * 3, color[2] * 3];
+        const tint = sample(palette, hash(y, x) * 2 - 1);
         out[i] = Math.min(255, tint[0]) * 0.4;
         out[i + 1] = Math.min(255, tint[1]) * 0.4;
         out[i + 2] = Math.min(255, tint[2]) * 0.4;
