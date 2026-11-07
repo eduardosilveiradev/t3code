@@ -1101,6 +1101,51 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   background-size: var(--surface-grain-size);
 }
 
+/* Dithered workspace backdrop (Appearance → Workspace backdrop). The main pane becomes
+   its own stacking context so the art paints above the pane's background and below
+   every child; the chat surfaces that normally repaint that background go clear. */
+[data-slot="sidebar-inset"]:has(> .workspace-backdrop) {
+  isolation: isolate;
+}
+[data-slot="sidebar-inset"]:has(> .workspace-backdrop) .workspace-surface {
+  background-color: transparent;
+}
+.workspace-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.45;
+  /* Muted text on the light background has almost no contrast headroom (4.7:1), so in
+     light mode the art stays out of the reading column entirely. */
+  mask-image: linear-gradient(to right, #000 12%, transparent 30%, transparent 70%, #000 88%);
+}
+.dark .workspace-backdrop {
+  opacity: 0.9;
+  mask-image: none;
+}
+/* One canvas pixel per 3px cell (WORKSPACE_BACKDROP_CELL_PX); the mask cuts each cell
+   to a 2px dot with a 1px gap, which is what reads as dither rather than blur. */
+.workspace-backdrop-canvas {
+  display: block;
+  image-rendering: pixelated;
+  mask-image:
+    linear-gradient(to right, #000 2px, transparent 2px),
+    linear-gradient(to bottom, #000 2px, transparent 2px);
+  mask-size: 3px 3px;
+  mask-composite: intersect;
+}
+@media (prefers-contrast: more), (forced-colors: active) {
+  .workspace-backdrop {
+    display: none;
+  }
+  [data-slot="sidebar-inset"]:has(> .workspace-backdrop) .workspace-surface {
+    background-color: var(--background);
+  }
+}
+
 /* Suppress all transitions during theme changes */
 .no-transitions,
 .no-transitions *,

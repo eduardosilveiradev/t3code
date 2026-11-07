@@ -209,6 +209,11 @@ export const EnvironmentIdentificationMode = Schema.Literals([
 export type EnvironmentIdentificationMode = typeof EnvironmentIdentificationMode.Type;
 export const DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE: EnvironmentIdentificationMode = "artwork";
 
+/** Dithered artwork painted behind the main workspace pane. */
+export const WorkspaceBackdrop = Schema.Literals(["none", "aurora", "ember"]);
+export type WorkspaceBackdrop = typeof WorkspaceBackdrop.Type;
+export const DEFAULT_WORKSPACE_BACKDROP: WorkspaceBackdrop = "none";
+
 export const SnapShotKeyChord = KeybindingShortcut.check(
   Schema.makeFilter(
     (shortcut) =>
@@ -479,6 +484,9 @@ export const ClientSettingsSchema = Schema.Struct({
   ),
   glassOpacity: GlassOpacity.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_GLASS_OPACITY)),
+  ),
+  workspaceBackdrop: WorkspaceBackdrop.pipe(
+    Schema.withDecodingDefault(Effect.succeed(DEFAULT_WORKSPACE_BACKDROP)),
   ),
   fontSizeInterface: InterfaceFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_FONT_SIZE)),
@@ -2062,6 +2070,7 @@ export const ClientSettingsPatch = Schema.Struct({
   diffLayout: Schema.optionalKey(DiffLayout),
   environmentIdentificationMode: Schema.optionalKey(EnvironmentIdentificationMode),
   glassOpacity: Schema.optionalKey(GlassOpacity),
+  workspaceBackdrop: Schema.optionalKey(WorkspaceBackdrop),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizePrompt: Schema.optionalKey(PromptFontSize),

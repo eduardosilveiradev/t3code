@@ -3,9 +3,11 @@ import { useState } from "react";
 import {
   DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE,
   DEFAULT_UNIFIED_SETTINGS,
+  DEFAULT_WORKSPACE_BACKDROP,
   type ChatWidth,
   type EffortDisplay,
   type EnvironmentIdentificationMode,
+  type WorkspaceBackdrop,
   MAX_APPEARANCE_CONTRAST,
   MAX_GLASS_OPACITY,
   MAX_PANEL_ANIMATION_DURATION_MS,
@@ -43,6 +45,12 @@ const ENVIRONMENT_IDENTIFICATION_LABELS: Record<EnvironmentIdentificationMode, s
   "dev-artwork": "Dev artwork",
   pill: "Version pill",
   none: "None",
+};
+
+const WORKSPACE_BACKDROP_LABELS: Record<WorkspaceBackdrop, string> = {
+  none: "None",
+  aurora: "Aurora",
+  ember: "Ember",
 };
 
 // The default "artwork" follows the running channel, so it is labeled as that channel's art,
@@ -254,6 +262,40 @@ export function AppearanceSettingsPanel() {
                 value={settings.glassOpacity}
               />
             </div>
+          }
+        />
+
+        <SettingsRow
+          {...searchableSetting("workspace-backdrop")}
+          description="Dithered artwork behind the main pane. Turns itself off with increased contrast."
+          resetAction={
+            settings.workspaceBackdrop !== DEFAULT_WORKSPACE_BACKDROP ? (
+              <SettingResetButton
+                label="workspace backdrop"
+                onClick={() => updateSettings({ workspaceBackdrop: DEFAULT_WORKSPACE_BACKDROP })}
+              />
+            ) : null
+          }
+          control={
+            <Select
+              value={settings.workspaceBackdrop}
+              onValueChange={(value) => {
+                if (value === "none" || value === "aurora" || value === "ember") {
+                  updateSettings({ workspaceBackdrop: value });
+                }
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-40" aria-label="Workspace backdrop">
+                <SelectValue>{WORKSPACE_BACKDROP_LABELS[settings.workspaceBackdrop]}</SelectValue>
+              </SelectTrigger>
+              <SelectPopup align="end" alignItemWithTrigger={false}>
+                {Object.entries(WORKSPACE_BACKDROP_LABELS).map(([value, label]) => (
+                  <SelectItem hideIndicator key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectPopup>
+            </Select>
           }
         />
 
