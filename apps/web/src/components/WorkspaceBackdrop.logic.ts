@@ -81,22 +81,28 @@ const PHOTO_ANCHOR_Y = 0.5;
  */
 const BAYER_2 = [0, 2, 3, 1];
 const PHOTO_STEPS = 3;
+/** Brightest channel below this is solid black: space and the night side get no dither at all. */
+const PHOTO_BLACK_POINT = 0.12;
 
 function renderPhotoCells(cols: number, rows: number, photo: Uint8ClampedArray) {
   const out = new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const i = (y * cols + x) * 4;
+      out[i + 3] = 255;
+      const peak = Math.max(photo[i]!, photo[i + 1]!, photo[i + 2]!) / 255;
+      if (peak <= PHOTO_BLACK_POINT) continue;
+      // Rescale from the black point up, keeping the hue, so the band fades in without a hard edge.
+      const gain = (peak - PHOTO_BLACK_POINT) / (1 - PHOTO_BLACK_POINT) / peak;
       const threshold = (BAYER_2[(y & 1) * 2 + (x & 1)]! + 0.5) / 4;
       for (let c = 0; c < 3; c++) {
-        const v = (photo[i + c]! / 255) * PHOTO_STEPS;
+        const v = (photo[i + c]! / 255) * gain * PHOTO_STEPS;
         const level = Math.min(
           PHOTO_STEPS,
           Math.floor(v) + (v - Math.floor(v) > threshold ? 1 : 0),
         );
         out[i + c] = level * 85;
       }
-      out[i + 3] = 255;
     }
   }
   return out;

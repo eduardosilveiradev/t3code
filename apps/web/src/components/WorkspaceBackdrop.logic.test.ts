@@ -51,8 +51,9 @@ describe("renderWorkspaceBackdropCells", () => {
   it("dithers the horizon photo from its own colours", () => {
     const cols = 60;
     const rows = 40;
-    // A photo that is bright orange on the left edge and black elsewhere.
+    // A photo that is bright orange on the left edge and near-black elsewhere, like space.
     const photo = new Uint8ClampedArray(cols * rows * 4);
+    for (let i = 0; i < photo.length; i += 4) photo.set([22, 20, 26, 255], i);
     for (let y = 0; y < rows; y++)
       for (let x = 0; x < 6; x++) photo.set([255, 140, 40, 255], (y * cols + x) * 4);
     const pixels = renderWorkspaceBackdropCells(cols, rows, "horizon", photo);
@@ -64,6 +65,10 @@ describe("renderWorkspaceBackdropCells", () => {
         blue += pixels[(y * cols + x) * 4 + 2]!;
       }
     expect(red).toBeGreaterThan(blue * 2);
+    // The dark part of the photo is solid black, with no dither dots.
+    for (let y = 0; y < rows; y++)
+      for (let x = 10; x < cols; x++)
+        for (let c = 0; c < 3; c++) expect(pixels[(y * cols + x) * 4 + c]).toBe(0);
     // Solid cells: every one is opaque, even the black ones.
     for (let i = 3; i < pixels.length; i += 4) expect(pixels[i]).toBe(255);
   });
