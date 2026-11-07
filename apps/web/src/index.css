@@ -1190,6 +1190,15 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
     }
   }
 }
+/* The row under the composer (environment, worktree, branch) has no surface of its own; over the
+   art its ghost buttons would sit on the picture, so it gets the composer's frosted glass. */
+[data-slot="sidebar-inset"]:has(> .workspace-backdrop) [data-slot="composer-context-strip"] {
+  margin-top: 0.375rem;
+  padding-block: 0.25rem;
+  border-radius: 0.75rem;
+  background: color-mix(in oklab, var(--background) var(--glass-opacity), transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+}
 .dark .workspace-backdrop {
   opacity: 0.9;
   mask-image: none;
