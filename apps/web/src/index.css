@@ -193,6 +193,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --inset-shadow-control-highlight: 0 1px rgb(255 255 255 / 16%);
   --inset-shadow-control-pressed: 0 1px rgb(0 0 0 / 8%);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
   /* The composer's elevation: a soft drop pulled in under the surface, shared
      by the composer, its context strip and attached banners. */
   --shadow-composer: 0 1px 2px rgb(0 0 0 / 5%);
@@ -1121,6 +1122,19 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   /* Muted text on the light background has almost no contrast headroom (4.7:1), so in
      light mode the art stays out of the reading column entirely. */
   mask-image: linear-gradient(to right, #000 12%, transparent 30%, transparent 70%, #000 88%);
+}
+/* Blurred behind an open thread, clear on the new chat page. The blur is a static layer over
+   the canvas that fades in, so the change costs an opacity transition, not a re-blur per frame. */
+.workspace-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  transition: opacity 250ms var(--ease-out-strong);
+}
+[data-slot="sidebar-inset"]:has([data-assistant-citation-viewport]) > .workspace-backdrop::after {
+  opacity: 1;
 }
 .dark .workspace-backdrop {
   opacity: 0.9;
