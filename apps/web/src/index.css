@@ -194,6 +194,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --inset-shadow-control-pressed: 0 1px rgb(0 0 0 / 8%);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
   /* The composer's elevation: a soft drop pulled in under the surface, shared
      by the composer, its context strip and attached banners. */
   --shadow-composer: 0 1px 2px rgb(0 0 0 / 5%);
@@ -1131,10 +1132,43 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   inset: 0;
   backdrop-filter: blur(14px);
   opacity: 0;
-  transition: opacity 250ms var(--ease-out-strong);
+  transition: opacity 700ms var(--ease-in-out-strong);
 }
 [data-slot="sidebar-inset"]:has([data-assistant-citation-viewport]) > .workspace-backdrop::after {
   opacity: 1;
+}
+/* The picture also eases back a touch as it blurs, so the thread reads as a layer in front. */
+@media (prefers-reduced-motion: no-preference) {
+  .workspace-backdrop-canvas {
+    transition: transform 700ms var(--ease-in-out-strong);
+  }
+  [data-slot="sidebar-inset"]:has([data-assistant-citation-viewport])
+    > .workspace-backdrop
+    .workspace-backdrop-canvas {
+    transform: scale(1.04);
+  }
+  /* New chat and an open thread swap in place: the incoming one rises in, out of a soft blur. */
+  [data-assistant-citation-viewport],
+  [data-thread-empty] {
+    transition:
+      opacity 450ms var(--ease-out-strong),
+      transform 450ms var(--ease-out-strong),
+      filter 450ms var(--ease-out-strong);
+    @starting-style {
+      opacity: 0;
+      transform: translateY(10px);
+      filter: blur(6px);
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-assistant-citation-viewport],
+  [data-thread-empty] {
+    transition: opacity 300ms ease;
+    @starting-style {
+      opacity: 0;
+    }
+  }
 }
 .dark .workspace-backdrop {
   opacity: 0.9;
