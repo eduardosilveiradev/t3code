@@ -8,9 +8,9 @@ type BandPalette = ReadonlyArray<readonly [position: number, color: Rgb]>;
 /** CSS pixels per dither cell: a 2px dot plus a 1px gap (the gap is a CSS mask). */
 const WORKSPACE_BACKDROP_CELL_PX = 3;
 
-/** CSS pixels per cell for an art: the photo is solid cells with no gap, so it goes finer. */
+/** CSS pixels per cell for an art. The photo matches Devin's panel: 5 device pixels at 2x. */
 export const backdropCellPx = (art: WorkspaceBackdropArt) =>
-  art === "horizon" ? 2 : WORKSPACE_BACKDROP_CELL_PX;
+  art === "horizon" ? 2.5 : WORKSPACE_BACKDROP_CELL_PX;
 
 const BAND_PALETTES: Record<Exclude<WorkspaceBackdropArt, "horizon">, BandPalette> = {
   aurora: [
@@ -71,38 +71,30 @@ function hash(x: number, y: number): number {
 const textGuard = (u: number, floor = 0.2) =>
   floor + (1 - floor) * smoothstep(0.16, 0.42, Math.abs(u - 0.5));
 
-/** The photo is darker than the generated bands, so its reading column needs less dimming. */
-const PHOTO_GUARD_FLOOR = 0.2;
-
 /** Where a crop of the photo sits when the pane is taller than it, 0 = top, 1 = bottom. */
-const PHOTO_ANCHOR_Y = 0.42;
+const PHOTO_ANCHOR_Y = 0.5;
 
-/** Photo dither, after the Devin panel: solid cells, a 4x4 Bayer (it reads as a fine checker), 6 levels a channel. */
-const BAYER_4 = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-const PHOTO_LEVELS = 6;
-/** Muted and a little darker than the source, as the panel is. */
-const PHOTO_SATURATION = 0.8;
-const PHOTO_EXPOSURE = 0.78;
+/**
+ * The photo art, dithered as Devin's panel is: each channel to 4 levels (0/85/170/255) through a
+ * 2x2 ordered matrix, which reads as a fine checker between neighbouring colours. Every cell is
+ * solid. Not dimmed: the asset is already toned to the panel's darkness.
+ */
+const BAYER_2 = [0, 2, 3, 1];
+const PHOTO_STEPS = 3;
 
-/** The photo art: every cell solid (opaque), dimmed in the reading column like the bands. */
-function renderPhotoCells(
-  cols: number,
-  rows: number,
-  photo: Uint8ClampedArray,
-  guardText: boolean,
-) {
+function renderPhotoCells(cols: number, rows: number, photo: Uint8ClampedArray) {
   const out = new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
-  const steps = PHOTO_LEVELS - 1;
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const i = (y * cols + x) * 4;
-      const gain = PHOTO_EXPOSURE * (guardText ? textGuard(x / cols, PHOTO_GUARD_FLOOR) : 1);
-      const grey = (photo[i]! + photo[i + 1]! + photo[i + 2]!) / 3;
-      const threshold = (BAYER_4[(y & 3) * 4 + (x & 3)]! + 0.5) / 16;
+      const threshold = (BAYER_2[(y & 1) * 2 + (x & 1)]! + 0.5) / 4;
       for (let c = 0; c < 3; c++) {
-        const muted = grey + (photo[i + c]! - grey) * PHOTO_SATURATION;
-        const v = Math.min(1, Math.max(0, (muted / 255) * gain)) * steps;
-        out[i + c] = ((Math.floor(v) + (v - Math.floor(v) > threshold ? 1 : 0)) / steps) * 255;
+        const v = (photo[i + c]! / 255) * PHOTO_STEPS;
+        const level = Math.min(
+          PHOTO_STEPS,
+          Math.floor(v) + (v - Math.floor(v) > threshold ? 1 : 0),
+        );
+        out[i + c] = level * 85;
       }
       out[i + 3] = 255;
     }
@@ -112,7 +104,7 @@ function renderPhotoCells(
 
 /**
  * Where to read a `srcW`×`srcH` image so it covers a `cols`×`rows` grid without stretching
- * (CSS `object-fit: cover`), centred across and a little above centre down.
+ * (CSS `object-fit: cover`), centred.
  */
 export function coverSourceRect(srcW: number, srcH: number, cols: number, rows: number) {
   const scale = Math.max(cols / srcW, rows / srcH);
@@ -137,7 +129,7 @@ export function renderWorkspaceBackdropCells(
   if (art === "horizon") {
     if (!photo || photo.length < cols * rows * 4)
       return new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
-    return renderPhotoCells(cols, rows, photo, guardText);
+    return renderPhotoCells(cols, rows, photo);
   }
   const out = new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
   const palette = BAND_PALETTES[art];

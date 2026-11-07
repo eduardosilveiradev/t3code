@@ -42,9 +42,9 @@ function photoCells(img: HTMLImageElement, cols: number, rows: number): Uint8Cla
 }
 
 /**
- * Dithered artwork behind the main pane, chosen in Settings → Background. Drawn once per size at
- * one canvas pixel per dither cell and scaled up with `image-rendering: pixelated`, so it costs
- * one small canvas write per resize and nothing per frame.
+ * Dithered artwork behind the main pane, chosen in Settings → Background. Drawn once per size,
+ * one solid block of whole device pixels per dither cell, so it costs one canvas write per resize
+ * and nothing per frame.
  */
 export function WorkspaceBackdrop() {
   const art = useClientSettings((settings) => settings.workspaceBackdrop);
@@ -77,17 +77,15 @@ export function BackdropCanvas({
     let photo: HTMLImageElement | null = null;
     let alive = true;
 
-    const cell = backdropCellPx(art);
     const draw = (force = false) => {
+      // Whole device pixels per cell, so no cell comes out a pixel wider than its neighbour.
+      const dpr = window.devicePixelRatio || 1;
+      const cellDev = Math.max(1, Math.round(backdropCellPx(art) * dpr));
       const { width, height } = host.getBoundingClientRect();
-      const cols = Math.max(1, Math.ceil(width / cell));
-      const rows = Math.max(1, Math.ceil(height / cell));
-      if (!force && canvas.width === cols && canvas.height === rows) return;
+      const cols = Math.max(1, Math.ceil((width * dpr) / cellDev));
+      const rows = Math.max(1, Math.ceil((height * dpr) / cellDev));
+      if (!force && canvas.width === cols * cellDev && canvas.height === rows * cellDev) return;
       if (art === "horizon" && !photo) return;
-      canvas.width = cols;
-      canvas.height = rows;
-      canvas.style.width = `${cols * cell}px`;
-      canvas.style.height = `${rows * cell}px`;
       const cells = renderWorkspaceBackdropCells(
         cols,
         rows,
@@ -95,7 +93,18 @@ export function BackdropCanvas({
         photo ? photoCells(photo, cols, rows) : undefined,
         { guardText },
       );
-      canvas.getContext("2d")?.putImageData(new ImageData(cells, cols), 0, 0);
+      const small = document.createElement("canvas");
+      small.width = cols;
+      small.height = rows;
+      small.getContext("2d")?.putImageData(new ImageData(cells, cols), 0, 0);
+      canvas.width = cols * cellDev;
+      canvas.height = rows * cellDev;
+      canvas.style.width = `${canvas.width / dpr}px`;
+      canvas.style.height = `${canvas.height / dpr}px`;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(small, 0, 0, canvas.width, canvas.height);
     };
 
     // A new art choice must repaint even at the same size.

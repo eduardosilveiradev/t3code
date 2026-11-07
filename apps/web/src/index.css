@@ -1126,7 +1126,12 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   opacity: 0.9;
   mask-image: none;
 }
-/* One canvas pixel per 3px cell (WORKSPACE_BACKDROP_CELL_PX); the mask cuts each cell
+/* The photo is already toned to Devin's panel, so in dark mode it shows at full strength. */
+.dark .workspace-backdrop:has(> [data-art="horizon"]),
+.dark .backdrop-preview .workspace-backdrop-canvas[data-art="horizon"] {
+  opacity: 1;
+}
+/* Each 3px cell (WORKSPACE_BACKDROP_CELL_PX) is a solid block of device pixels; the mask cuts it
    to a 2px dot with a 1px gap, which is what reads as dither rather than blur. */
 .workspace-backdrop-canvas {
   display: block;
@@ -1137,7 +1142,7 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   mask-size: 3px 3px;
   mask-composite: intersect;
 }
-/* The photo is solid cells in a checker, as the panel it comes from; no dot gaps. */
+/* The photo is solid cells in a 2x2 checker, as Devin's panel; no dot gaps. */
 .workspace-backdrop-canvas[data-art="horizon"] {
   mask-image: none;
 }
