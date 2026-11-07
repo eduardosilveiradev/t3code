@@ -1171,17 +1171,13 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
       transform: scale(1.04);
     }
   }
-  /* New chat and an open thread swap in place: the incoming one rises in, out of a soft blur. */
+  /* New chat and an open thread swap in place: the incoming one fades in. Opacity only: moving or
+     filtering the scroll viewport throws off its scroll anchoring while the thread lays out. */
   [data-assistant-citation-viewport],
   [data-thread-empty] {
-    transition:
-      opacity 450ms var(--ease-out-strong),
-      transform 450ms var(--ease-out-strong),
-      filter 450ms var(--ease-out-strong);
+    transition: opacity 450ms var(--ease-out-strong);
     @starting-style {
       opacity: 0;
-      transform: translateY(10px);
-      filter: blur(6px);
     }
   }
 }
