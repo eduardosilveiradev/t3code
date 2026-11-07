@@ -8,7 +8,7 @@ type BandPalette = ReadonlyArray<readonly [position: number, color: Rgb]>;
 /** CSS pixels per dither cell: a 2px dot plus a 1px gap (the gap is a CSS mask). */
 export const WORKSPACE_BACKDROP_CELL_PX = 3;
 
-const BAND_PALETTES: Record<WorkspaceBackdropArt, BandPalette> = {
+const BAND_PALETTES: Record<Exclude<WorkspaceBackdropArt, "horizon">, BandPalette> = {
   aurora: [
     [-1, [24, 70, 255]],
     [-0.45, [60, 170, 255]],
@@ -63,44 +63,85 @@ function hash(x: number, y: number): number {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
+/** Dims the centre column, where chat text sits, so text keeps its contrast over the dots. */
+const textGuard = (u: number, floor = 0.2) =>
+  floor + (1 - floor) * smoothstep(0.16, 0.42, Math.abs(u - 0.5));
+
+/** The photo is darker than the generated bands, so its reading column needs less dimming. */
+const PHOTO_GUARD_FLOOR = 0.2;
+
+/** Where the slice of a tall photo sits, 0 = top, 1 = bottom: on the horizon band. */
+const PHOTO_ANCHOR_Y = 0.42;
+
+/** Brightens the photo a touch: dithering to 3 levels per channel reads darker than the source. */
+const PHOTO_GAIN = 1.15;
+
 /**
- * One RGBA pixel per dither cell: a sweeping light band (bright, warm core; cool above, hot
- * below) quantised per channel through an ordered Bayer dither, over a sparse floor of
- * coloured noise. Transparent where a cell has no dot, so the pane's own background shows.
- * The centre column, where chat text sits, is dimmed to keep the text readable.
+ * Where to read a `srcW`×`srcH` image so it covers a `cols`×`rows` grid without stretching
+ * (CSS `object-fit: cover`). A wide window shows a horizontal slice of the tall photo; it is
+ * taken just above the middle, where the bright horizon band crosses the frame.
+ */
+export function coverSourceRect(srcW: number, srcH: number, cols: number, rows: number) {
+  const scale = Math.max(cols / srcW, rows / srcH);
+  const sw = cols / scale;
+  const sh = rows / scale;
+  return { sx: (srcW - sw) / 2, sy: (srcH - sh) * PHOTO_ANCHOR_Y, sw, sh };
+}
+
+/**
+ * One RGBA pixel per dither cell, quantised per channel through an ordered Bayer dither over a
+ * sparse floor of coloured noise. Transparent where a cell has no dot, so the pane's own
+ * background shows. The art is either a generated light band (aurora, ember) or a photo
+ * (horizon), passed in already scaled to one RGBA pixel per cell; without it nothing is drawn.
  */
 export function renderWorkspaceBackdropCells(
   cols: number,
   rows: number,
   art: WorkspaceBackdropArt,
+  photo?: Uint8ClampedArray,
+  { guardText = true }: { guardText?: boolean } = {},
 ): Uint8ClampedArray<ArrayBuffer> {
-  const palette = BAND_PALETTES[art];
   const out = new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
+  if (art === "horizon" && (!photo || photo.length < cols * rows * 4)) return out;
+  const palette = art === "horizon" ? null : BAND_PALETTES[art];
   // Measure the band in the shorter axis so it keeps its thickness at any aspect ratio.
   const scale = Math.min(cols, rows);
+  const color: [number, number, number] = [0, 0, 0];
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const u = x / cols;
-      const centre = (0.06 + 0.38 * u + 0.16 * u * u) * rows;
-      const d = (y - centre) / (BAND_WIDTH * scale);
-      const glow = Math.exp(-d * d) + 0.18 * Math.exp(-Math.abs(d) * 0.9);
-      const textGuard = 0.2 + 0.8 * smoothstep(0.16, 0.42, Math.abs(u - 0.5));
-      const strength = Math.min(1, glow * textGuard * (0.75 + 0.25 * u));
-      const color = sample(palette, Math.max(-1, Math.min(1, d / 2.4)));
-      const threshold = (BAYER_8[(y & 7) * 8 + (x & 7)]! + 0.5) / 64;
       const i = (y * cols + x) * 4;
+      let strength: number;
+      if (palette) {
+        const centre = (0.06 + 0.38 * u + 0.16 * u * u) * rows;
+        const d = (y - centre) / (BAND_WIDTH * scale);
+        const glow = Math.exp(-d * d) + 0.18 * Math.exp(-Math.abs(d) * 0.9);
+        strength = Math.min(1, glow * (guardText ? textGuard(u) : 1) * (0.75 + 0.25 * u));
+        const c = sample(palette, Math.max(-1, Math.min(1, d / 2.4)));
+        color[0] = c[0];
+        color[1] = c[1];
+        color[2] = c[2];
+      } else {
+        strength = Math.min(1, (guardText ? textGuard(u, PHOTO_GUARD_FLOOR) : 1) * PHOTO_GAIN);
+        color[0] = photo![i]!;
+        color[1] = photo![i + 1]!;
+        color[2] = photo![i + 2]!;
+      }
+      const threshold = (BAYER_8[(y & 7) * 8 + (x & 7)]! + 0.5) / 64;
       let lit = false;
       for (let c = 0; c < 3; c++) {
-        const v = (color[c]! / 255) * strength * LEVELS;
+        const v = Math.min(1, (color[c]! / 255) * strength) * LEVELS;
         const level = Math.min(LEVELS, Math.floor(v) + (v - Math.floor(v) > threshold ? 1 : 0));
         out[i + c] = (level / LEVELS) * 255;
         if (level > 0) lit = true;
       }
       if (!lit && hash(x, y) < NOISE_DENSITY) {
-        const tint = sample(palette, hash(y, x) * 2 - 1);
-        out[i] = tint[0] * 0.4;
-        out[i + 1] = tint[1] * 0.4;
-        out[i + 2] = tint[2] * 0.4;
+        const tint: Rgb = palette
+          ? sample(palette, hash(y, x) * 2 - 1)
+          : [color[0] * 3, color[1] * 3, color[2] * 3];
+        out[i] = Math.min(255, tint[0]) * 0.4;
+        out[i + 1] = Math.min(255, tint[1]) * 0.4;
+        out[i + 2] = Math.min(255, tint[2]) * 0.4;
         lit = true;
       }
       out[i + 3] = lit ? 255 : 0;

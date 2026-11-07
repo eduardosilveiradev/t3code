@@ -210,7 +210,7 @@ export type EnvironmentIdentificationMode = typeof EnvironmentIdentificationMode
 export const DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE: EnvironmentIdentificationMode = "artwork";
 
 /** Dithered artwork painted behind the main workspace pane. */
-export const WorkspaceBackdrop = Schema.Literals(["none", "aurora", "ember"]);
+export const WorkspaceBackdrop = Schema.Literals(["none", "horizon", "aurora", "ember"]);
 export type WorkspaceBackdrop = typeof WorkspaceBackdrop.Type;
 export const DEFAULT_WORKSPACE_BACKDROP: WorkspaceBackdrop = "none";
 
