@@ -325,6 +325,12 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: ["transparent transparency solid menus dialogs composer"],
   },
   {
+    id: "workspace-backdrop",
+    title: "Workspace backdrop",
+    to: "/settings/appearance",
+    searchTerms: ["dither dithered background wallpaper artwork aurora ember"],
+  },
+  {
     id: "diff-color-scheme",
     title: "Diff colors",
     to: "/settings/diffs",
