@@ -8,9 +8,16 @@ type BandPalette = ReadonlyArray<readonly [position: number, color: Rgb]>;
 /** CSS pixels per dither cell: a 2px dot plus a 1px gap (the gap is a CSS mask). */
 const WORKSPACE_BACKDROP_CELL_PX = 3;
 
-/** CSS pixels per cell for an art. The photo matches Devin's panel: 5 device pixels at 2x. */
-export const backdropCellPx = (art: WorkspaceBackdropArt) =>
-  art === "horizon" ? 2.5 : WORKSPACE_BACKDROP_CELL_PX;
+/**
+ * CSS pixels per cell for an art. The photo's comes from the dither setting, in half pixels
+ * (5 = 2.5px, Devin's panel); 0 means no dither, one cell per device pixel.
+ */
+export const backdropCellPx = (art: WorkspaceBackdropArt, dither: number) =>
+  art !== "horizon"
+    ? WORKSPACE_BACKDROP_CELL_PX
+    : dither > 0
+      ? dither / 2
+      : 1 / (globalThis.devicePixelRatio || 1);
 
 const BAND_PALETTES: Record<Exclude<WorkspaceBackdropArt, "horizon">, BandPalette> = {
   aurora: [
@@ -84,7 +91,7 @@ const PHOTO_STEPS = 3;
 /** Brightest channel below this is solid black: space and the night side get no dither at all. */
 const PHOTO_BLACK_POINT = 0.12;
 
-function renderPhotoCells(cols: number, rows: number, photo: Uint8ClampedArray) {
+function renderPhotoCells(cols: number, rows: number, photo: Uint8ClampedArray, dither: boolean) {
   const out = new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
@@ -94,6 +101,10 @@ function renderPhotoCells(cols: number, rows: number, photo: Uint8ClampedArray) 
       if (peak <= PHOTO_BLACK_POINT) continue;
       // Rescale from the black point up, keeping the hue, so the band fades in without a hard edge.
       const gain = (peak - PHOTO_BLACK_POINT) / (1 - PHOTO_BLACK_POINT) / peak;
+      if (!dither) {
+        for (let c = 0; c < 3; c++) out[i + c] = photo[i + c]! * gain;
+        continue;
+      }
       const threshold = (BAYER_2[(y & 1) * 2 + (x & 1)]! + 0.5) / 4;
       for (let c = 0; c < 3; c++) {
         const v = (photo[i + c]! / 255) * gain * PHOTO_STEPS;
@@ -130,12 +141,12 @@ export function renderWorkspaceBackdropCells(
   rows: number,
   art: WorkspaceBackdropArt,
   photo?: Uint8ClampedArray,
-  { guardText = true }: { guardText?: boolean } = {},
+  { guardText = true, dither = true }: { guardText?: boolean; dither?: boolean } = {},
 ): Uint8ClampedArray<ArrayBuffer> {
   if (art === "horizon") {
     if (!photo || photo.length < cols * rows * 4)
       return new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
-    return renderPhotoCells(cols, rows, photo);
+    return renderPhotoCells(cols, rows, photo, dither);
   }
   const out = new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
   const palette = BAND_PALETTES[art];

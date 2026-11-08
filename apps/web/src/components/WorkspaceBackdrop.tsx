@@ -53,8 +53,9 @@ function photoCells(img: HTMLImageElement, cols: number, rows: number): Uint8Cla
  */
 export function WorkspaceBackdrop() {
   const art = useClientSettings((settings) => settings.workspaceBackdrop);
+  const dither = useClientSettings((settings) => settings.workspaceBackdropDither);
   if (art === "none") return null;
-  return <Backdrop art={art} />;
+  return <Backdrop art={art} dither={dither} />;
 }
 
 /** Whether the last pane's backdrop was blurred (a thread was open) when it went away. */
@@ -65,7 +66,7 @@ let lastBlurred = false;
  * starts in the state the old one left (`data-was-blurred`, read by `@starting-style` in CSS)
  * and transitions from there, instead of appearing already blurred.
  */
-function Backdrop({ art }: { art: WorkspaceBackdropArt }) {
+function Backdrop({ art, dither }: { art: WorkspaceBackdropArt; dither: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [wasBlurred] = useState(() => lastBlurred);
   // oxlint-disable-next-line t3code/no-unreasoned-state-sync -- records this pane's blur state as its DOM goes away, for the next route's pane; sets no state
@@ -83,7 +84,7 @@ function Backdrop({ art }: { art: WorkspaceBackdropArt }) {
       className="workspace-backdrop"
       data-was-blurred={wasBlurred || undefined}
     >
-      <BackdropCanvas art={art} />
+      <BackdropCanvas art={art} dither={dither} />
       <div className="workspace-backdrop-blur" />
     </div>
   );
@@ -95,9 +96,12 @@ function Backdrop({ art }: { art: WorkspaceBackdropArt }) {
  */
 export function BackdropCanvas({
   art,
+  dither,
   guardText = true,
 }: {
   art: WorkspaceBackdropArt;
+  /** The dither setting, in half pixels; 0 is no dither. */
+  dither: number;
   guardText?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -114,7 +118,7 @@ export function BackdropCanvas({
     const draw = (force = false) => {
       // Whole device pixels per cell, so no cell comes out a pixel wider than its neighbour.
       const dpr = window.devicePixelRatio || 1;
-      const cellDev = Math.max(1, Math.round(backdropCellPx(art) * dpr));
+      const cellDev = Math.max(1, Math.round(backdropCellPx(art, dither) * dpr));
       const { width, height } = host.getBoundingClientRect();
       const cols = Math.max(1, Math.ceil((width * dpr) / cellDev));
       const rows = Math.max(1, Math.ceil((height * dpr) / cellDev));
@@ -125,7 +129,7 @@ export function BackdropCanvas({
         rows,
         art,
         photo ? photoCells(photo, cols, rows) : undefined,
-        { guardText },
+        { guardText, dither: dither > 0 },
       );
       const small = document.createElement("canvas");
       small.width = cols;
@@ -162,7 +166,7 @@ export function BackdropCanvas({
       stopObserving();
       clearTimeout(timer);
     };
-  }, [art, guardText]);
+  }, [art, dither, guardText]);
 
   return <canvas ref={canvasRef} className="workspace-backdrop-canvas" data-art={art} />;
 }

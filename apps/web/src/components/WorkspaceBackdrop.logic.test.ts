@@ -74,6 +74,18 @@ describe("renderWorkspaceBackdropCells", () => {
   });
 });
 
+describe("photo without dither", () => {
+  it("passes the photo through smoothly above the black point, black below it", () => {
+    const photo = new Uint8ClampedArray([200, 120, 60, 255, 20, 20, 24, 255]);
+    const pixels = renderWorkspaceBackdropCells(2, 1, "horizon", photo, { dither: false });
+    // Not snapped to the 0/85/170/255 levels, and the hue is kept.
+    expect([85, 170, 255]).not.toContain(pixels[0]);
+    expect(pixels[0]!).toBeGreaterThan(pixels[1]!);
+    expect(pixels[1]!).toBeGreaterThan(pixels[2]!);
+    expect([pixels[4], pixels[5], pixels[6]]).toEqual([0, 0, 0]);
+  });
+});
+
 describe("coverSourceRect", () => {
   it("covers a wide grid from a tall photo, sliced on the horizon band", () => {
     const r = coverSourceRect(346, 449, 400, 250);

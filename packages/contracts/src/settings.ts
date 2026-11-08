@@ -213,6 +213,17 @@ export const DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE: EnvironmentIdentificationM
 export const WorkspaceBackdrop = Schema.Literals(["none", "horizon", "aurora", "ember"]);
 export type WorkspaceBackdrop = typeof WorkspaceBackdrop.Type;
 export const DEFAULT_WORKSPACE_BACKDROP: WorkspaceBackdrop = "none";
+/** Dither cell size for the photo backdrop in half CSS pixels: 0 is no dither, 5 is 2.5px. */
+export const MIN_WORKSPACE_BACKDROP_DITHER = 0;
+export const MAX_WORKSPACE_BACKDROP_DITHER = 8;
+export const WorkspaceBackdropDither = Schema.Int.check(
+  Schema.isBetween({
+    minimum: MIN_WORKSPACE_BACKDROP_DITHER,
+    maximum: MAX_WORKSPACE_BACKDROP_DITHER,
+  }),
+);
+export type WorkspaceBackdropDither = typeof WorkspaceBackdropDither.Type;
+export const DEFAULT_WORKSPACE_BACKDROP_DITHER: WorkspaceBackdropDither = 5;
 
 export const SnapShotKeyChord = KeybindingShortcut.check(
   Schema.makeFilter(
@@ -487,6 +498,9 @@ export const ClientSettingsSchema = Schema.Struct({
   ),
   workspaceBackdrop: WorkspaceBackdrop.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_WORKSPACE_BACKDROP)),
+  ),
+  workspaceBackdropDither: WorkspaceBackdropDither.pipe(
+    Schema.withDecodingDefault(Effect.succeed(DEFAULT_WORKSPACE_BACKDROP_DITHER)),
   ),
   fontSizeInterface: InterfaceFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_FONT_SIZE)),
@@ -2071,6 +2085,7 @@ export const ClientSettingsPatch = Schema.Struct({
   environmentIdentificationMode: Schema.optionalKey(EnvironmentIdentificationMode),
   glassOpacity: Schema.optionalKey(GlassOpacity),
   workspaceBackdrop: Schema.optionalKey(WorkspaceBackdrop),
+  workspaceBackdropDither: Schema.optionalKey(WorkspaceBackdropDither),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizePrompt: Schema.optionalKey(PromptFontSize),
