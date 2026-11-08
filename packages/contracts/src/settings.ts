@@ -210,7 +210,21 @@ export type EnvironmentIdentificationMode = typeof EnvironmentIdentificationMode
 export const DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE: EnvironmentIdentificationMode = "artwork";
 
 /** Dithered artwork painted behind the main workspace pane. */
-export const WorkspaceBackdrop = Schema.Literals(["none", "horizon", "aurora", "ember"]);
+/** The photo backdrops (NASA photos from orbit) come first after "none"; aurora and ember are generated. */
+export const WORKSPACE_BACKDROP_PHOTOS = [
+  "horizon",
+  "sunset-limb",
+  "red-sun",
+  "sunrise-bands",
+  "bright-limb",
+  "crescent",
+] as const;
+export const WorkspaceBackdrop = Schema.Literals([
+  "none",
+  ...WORKSPACE_BACKDROP_PHOTOS,
+  "aurora",
+  "ember",
+]);
 export type WorkspaceBackdrop = typeof WorkspaceBackdrop.Type;
 export const DEFAULT_WORKSPACE_BACKDROP: WorkspaceBackdrop = "none";
 /** Dither cell size for the photo backdrop in half CSS pixels: 0 is no dither, 5 is 2.5px. */

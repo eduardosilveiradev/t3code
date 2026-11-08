@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vite-plus/test";
 
-import { coverSourceRect, renderWorkspaceBackdropCells } from "./WorkspaceBackdrop.logic";
+import {
+  isBackdropPhoto,
+  coverSourceRect,
+  renderWorkspaceBackdropCells,
+} from "./WorkspaceBackdrop.logic";
 
 const litShare = (
   pixels: Uint8ClampedArray,
@@ -71,6 +75,23 @@ describe("renderWorkspaceBackdropCells", () => {
         for (let c = 0; c < 3; c++) expect(pixels[(y * cols + x) * 4 + c]).toBe(0);
     // Solid cells: every one is opaque, even the black ones.
     for (let i = 3; i < pixels.length; i += 4) expect(pixels[i]).toBe(255);
+  });
+});
+
+describe("photo backdrops", () => {
+  it("treats every NASA photo as a photo, and the generated bands as bands", () => {
+    for (const art of [
+      "horizon",
+      "sunset-limb",
+      "red-sun",
+      "sunrise-bands",
+      "bright-limb",
+      "crescent",
+    ] as const)
+      expect(isBackdropPhoto(art)).toBe(true);
+    expect(isBackdropPhoto("aurora")).toBe(false);
+    // A photo with no pixels yet draws nothing, like Horizon.
+    expect(renderWorkspaceBackdropCells(4, 2, "crescent").every((v) => v === 0)).toBe(true);
   });
 });
 

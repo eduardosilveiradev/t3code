@@ -8,12 +8,18 @@ import {
 import type { CSSProperties } from "react";
 
 import { BackdropCanvas } from "../WorkspaceBackdrop";
+import { isBackdropPhoto } from "../WorkspaceBackdrop.logic";
 import { SettingResetButton, SettingsRow, SettingsSection } from "./settingsLayout";
 import { useScopedSettings, useUpdateScopedSettings } from "./useScopedSettings";
 
 const OPTIONS: ReadonlyArray<{ value: WorkspaceBackdrop; label: string; detail: string }> = [
   { value: "none", label: "None", detail: "The plain workspace background." },
-  { value: "horizon", label: "Horizon", detail: "Sunrise over the Earth, dithered." },
+  { value: "horizon", label: "Horizon", detail: "Fiery sunset over the South Atlantic." },
+  { value: "sunset-limb", label: "Sunset limb", detail: "A low orange band along the horizon." },
+  { value: "red-sun", label: "Red sun", detail: "The sun glowing red under a thin limb." },
+  { value: "sunrise-bands", label: "Sunrise bands", detail: "Layers from deep blue into orange." },
+  { value: "bright-limb", label: "Bright limb", detail: "A steep diagonal of light." },
+  { value: "crescent", label: "Crescent", detail: "A crescent moon over the sunrise." },
   { value: "aurora", label: "Aurora", detail: "A light band, blue into orange." },
   { value: "ember", label: "Ember", detail: "A light band, violet into orange." },
 ];
@@ -77,7 +83,7 @@ export function BackgroundSection() {
           </label>
         ))}
       </fieldset>
-      {current === "horizon" ? (
+      {current !== "none" && isBackdropPhoto(current) ? (
         <SettingsRow
           title="Dither"
           description="Pixel size of the dither pattern. Off shows the photo as it is."

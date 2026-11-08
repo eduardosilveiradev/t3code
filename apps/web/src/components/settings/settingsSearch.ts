@@ -339,7 +339,9 @@ export const SETTINGS_SEARCH_ITEMS = [
     id: "workspace-backdrop",
     title: "Background",
     to: "/settings/appearance",
-    searchTerms: ["workspace backdrop dither dithered wallpaper artwork horizon aurora ember"],
+    searchTerms: [
+      "workspace backdrop dither dithered wallpaper artwork photo nasa space earth horizon sunset sunrise crescent moon aurora ember",
+    ],
   },
   {
     id: "diff-color-scheme",

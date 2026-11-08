@@ -1,6 +1,9 @@
-import type { WorkspaceBackdrop } from "@t3tools/contracts";
+import { WORKSPACE_BACKDROP_PHOTOS, type WorkspaceBackdrop } from "@t3tools/contracts/settings";
 
 export type WorkspaceBackdropArt = Exclude<WorkspaceBackdrop, "none">;
+export type WorkspaceBackdropPhoto = (typeof WORKSPACE_BACKDROP_PHOTOS)[number];
+export const isBackdropPhoto = (art: WorkspaceBackdropArt): art is WorkspaceBackdropPhoto =>
+  (WORKSPACE_BACKDROP_PHOTOS as readonly string[]).includes(art);
 type Rgb = readonly [number, number, number];
 /** Colours across the light band, from far above its centre line (-1) to far below (+1). */
 type BandPalette = ReadonlyArray<readonly [position: number, color: Rgb]>;
@@ -13,13 +16,13 @@ const WORKSPACE_BACKDROP_CELL_PX = 3;
  * (5 = 2.5px, Devin's panel); 0 means no dither, one cell per device pixel.
  */
 export const backdropCellPx = (art: WorkspaceBackdropArt, dither: number) =>
-  art !== "horizon"
+  !isBackdropPhoto(art)
     ? WORKSPACE_BACKDROP_CELL_PX
     : dither > 0
       ? dither / 2
       : 1 / (globalThis.devicePixelRatio || 1);
 
-const BAND_PALETTES: Record<Exclude<WorkspaceBackdropArt, "horizon">, BandPalette> = {
+const BAND_PALETTES: Record<Exclude<WorkspaceBackdropArt, WorkspaceBackdropPhoto>, BandPalette> = {
   aurora: [
     [-1, [24, 70, 255]],
     [-0.45, [60, 170, 255]],
@@ -134,7 +137,7 @@ export function coverSourceRect(srcW: number, srcH: number, cols: number, rows: 
  * One RGBA pixel per dither cell, quantised per channel through an ordered Bayer dither over a
  * sparse floor of coloured noise. Transparent where a cell has no dot, so the pane's own
  * background shows. The art is either a generated light band (aurora, ember) or a photo
- * (horizon), passed in already scaled to one RGBA pixel per cell; without it nothing is drawn.
+ * (horizon and the other NASA photos), passed in already scaled to one RGBA pixel per cell; without it nothing is drawn.
  */
 export function renderWorkspaceBackdropCells(
   cols: number,
@@ -143,7 +146,7 @@ export function renderWorkspaceBackdropCells(
   photo?: Uint8ClampedArray,
   { guardText = true, dither = true }: { guardText?: boolean; dither?: boolean } = {},
 ): Uint8ClampedArray<ArrayBuffer> {
-  if (art === "horizon") {
+  if (isBackdropPhoto(art)) {
     if (!photo || photo.length < cols * rows * 4)
       return new Uint8ClampedArray(new ArrayBuffer(cols * rows * 4));
     return renderPhotoCells(cols, rows, photo, dither);

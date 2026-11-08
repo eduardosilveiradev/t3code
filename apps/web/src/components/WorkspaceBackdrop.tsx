@@ -1,36 +1,57 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
 import horizonUrl from "~/assets/backdrop-horizon.jpg";
+import sunsetLimbUrl from "~/assets/backdrop-sunset-limb.jpg";
+import redSunUrl from "~/assets/backdrop-red-sun.jpg";
+import sunriseBandsUrl from "~/assets/backdrop-sunrise-bands.jpg";
+import brightLimbUrl from "~/assets/backdrop-bright-limb.jpg";
+import crescentUrl from "~/assets/backdrop-crescent.jpg";
 import { useClientSettings } from "~/hooks/useSettings";
 import { observeResize } from "~/lib/observeResize";
 import {
   coverSourceRect,
+  isBackdropPhoto,
   renderWorkspaceBackdropCells,
   backdropCellPx,
   type WorkspaceBackdropArt,
+  type WorkspaceBackdropPhoto,
 } from "./WorkspaceBackdrop.logic";
 
 const REDRAW_DEBOUNCE_MS = 120;
 
-/** The horizon photo, decoded once and shared by the pane and the settings previews. */
-let horizonImage: Promise<HTMLImageElement> | null = null;
+/** NASA photos from orbit, toned to Devin's panel; each is fetched only when first shown. */
+const PHOTO_URLS: Record<WorkspaceBackdropPhoto, string> = {
+  horizon: horizonUrl,
+  "sunset-limb": sunsetLimbUrl,
+  "red-sun": redSunUrl,
+  "sunrise-bands": sunriseBandsUrl,
+  "bright-limb": brightLimbUrl,
+  crescent: crescentUrl,
+};
+
+/** Each photo decoded once and shared by the pane and the settings previews. */
+const photoLoads = new Map<WorkspaceBackdropPhoto, Promise<HTMLImageElement>>();
 /** Set once decoded, so a pane mounted later paints the photo in its first frame. */
-let horizonDecoded: HTMLImageElement | null = null;
-function loadHorizon(): Promise<HTMLImageElement> {
-  horizonImage ??= new Promise((resolve, reject) => {
-    const img = new Image();
-    img.decoding = "async";
-    img.onload = () => {
-      horizonDecoded = img;
-      resolve(img);
-    };
-    img.onerror = () => {
-      horizonImage = null;
-      reject(new Error("horizon backdrop failed to load"));
-    };
-    img.src = horizonUrl;
-  });
-  return horizonImage;
+const photoDecoded = new Map<WorkspaceBackdropPhoto, HTMLImageElement>();
+function loadPhoto(art: WorkspaceBackdropPhoto): Promise<HTMLImageElement> {
+  let load = photoLoads.get(art);
+  if (!load) {
+    load = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = () => {
+        photoDecoded.set(art, img);
+        resolve(img);
+      };
+      img.onerror = () => {
+        photoLoads.delete(art);
+        reject(new Error(`${art} backdrop failed to load`));
+      };
+      img.src = PHOTO_URLS[art];
+    });
+    photoLoads.set(art, load);
+  }
+  return load;
 }
 
 /** The photo scaled to one RGBA pixel per dither cell, covering the grid. */
@@ -112,7 +133,9 @@ export function BackdropCanvas({
     const canvas = canvasRef.current;
     const host = canvas?.parentElement;
     if (!canvas || !host) return;
-    let photo: HTMLImageElement | null = art === "horizon" ? horizonDecoded : null;
+    let photo: HTMLImageElement | null = isBackdropPhoto(art)
+      ? (photoDecoded.get(art) ?? null)
+      : null;
     let alive = true;
 
     const draw = (force = false) => {
@@ -123,7 +146,7 @@ export function BackdropCanvas({
       const cols = Math.max(1, Math.ceil((width * dpr) / cellDev));
       const rows = Math.max(1, Math.ceil((height * dpr) / cellDev));
       if (!force && canvas.width === cols * cellDev && canvas.height === rows * cellDev) return;
-      if (art === "horizon" && !photo) return;
+      if (isBackdropPhoto(art) && !photo) return;
       const cells = renderWorkspaceBackdropCells(
         cols,
         rows,
@@ -147,8 +170,8 @@ export function BackdropCanvas({
 
     // A new art choice must repaint even at the same size.
     draw(true);
-    if (art === "horizon" && !photo) {
-      loadHorizon()
+    if (isBackdropPhoto(art) && !photo) {
+      loadPhoto(art)
         .then((img) => {
           if (!alive) return;
           photo = img;
@@ -168,5 +191,12 @@ export function BackdropCanvas({
     };
   }, [art, dither, guardText]);
 
-  return <canvas ref={canvasRef} className="workspace-backdrop-canvas" data-art={art} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      className="workspace-backdrop-canvas"
+      data-art={art}
+      data-photo={isBackdropPhoto(art) || undefined}
+    />
+  );
 }
