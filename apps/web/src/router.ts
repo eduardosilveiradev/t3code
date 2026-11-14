@@ -14,6 +14,10 @@ export function getRouter(history: RouterHistory) {
     defaultViewTransition: {
       types: ({ fromLocation, toLocation, pathChanged }) => {
         if (!fromLocation || !pathChanged || typeof window === "undefined") return false;
+        // A page change while the last transition still runs would make the browser skip that one and
+        // reject its promises, which nothing awaits. Let the running one finish; this change just swaps.
+        if ((document as Document & { activeViewTransition?: unknown }).activeViewTransition)
+          return false;
         if (window.matchMedia("(max-width: 639px), (prefers-reduced-motion: reduce)").matches)
           return false;
         if (fromLocation.state.__TSR_index === toLocation.state.__TSR_index) return false;
