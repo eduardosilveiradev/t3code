@@ -647,6 +647,7 @@ export interface ThreadStatusPill {
   colorClass: string;
   dotClass: string;
   pulse: boolean;
+  icon: "approval" | "input" | "request" | "working" | "waiting" | "failed" | "done";
 }
 
 type ThreadStatusInput = Pick<
@@ -1241,6 +1242,7 @@ export function resolveThreadStatusPill(input: {
       colorClass: "text-amber-600 dark:text-amber-300/90",
       dotClass: "bg-amber-500 dark:bg-amber-300/90",
       pulse: false,
+      icon: "approval",
     };
   }
 
@@ -1250,6 +1252,7 @@ export function resolveThreadStatusPill(input: {
       colorClass: "text-indigo-600 dark:text-indigo-300/90",
       dotClass: "bg-indigo-500 dark:bg-indigo-300/90",
       pulse: false,
+      icon: "input",
     };
   }
 
@@ -1259,6 +1262,7 @@ export function resolveThreadStatusPill(input: {
       colorClass: "text-guest-foreground",
       dotClass: "bg-guest",
       pulse: false,
+      icon: "request",
     };
   }
 
@@ -1271,6 +1275,7 @@ export function resolveThreadStatusPill(input: {
       colorClass: "text-sky-600 dark:text-sky-300/80",
       dotClass: "bg-sky-500 dark:bg-sky-300/80",
       pulse: true,
+      icon: "working",
     };
   }
 
@@ -1284,14 +1289,16 @@ export function resolveThreadStatusPill(input: {
       colorClass: "text-sky-600 dark:text-sky-300/80",
       dotClass: "bg-sky-500 dark:bg-sky-300/80",
       pulse: true,
+      icon: "working",
     };
   }
 
-  const waiting = {
+  const waiting: ThreadStatusPill = {
     label: msg("Waiting"),
     colorClass: "text-sidebar-muted-foreground",
     dotClass: "bg-sidebar-muted-foreground",
     pulse: false,
+    icon: "waiting",
   };
   if (thread.runtime?.status === "running" && thread.blockedOnThreadWait === true) return waiting;
 
@@ -1302,6 +1309,7 @@ export function resolveThreadStatusPill(input: {
       colorClass: "text-red-600 dark:text-red-300/90",
       dotClass: "bg-red-500 dark:bg-red-300/90",
       pulse: false,
+      icon: "failed",
     };
   }
 
@@ -1318,6 +1326,7 @@ export function resolveThreadStatusPill(input: {
       colorClass: "text-violet-600 dark:text-violet-300/90",
       dotClass: "bg-violet-500 dark:bg-violet-300/90",
       pulse: false,
+      icon: "done",
     };
   }
 
@@ -1327,6 +1336,7 @@ export function resolveThreadStatusPill(input: {
       colorClass: "text-emerald-600 dark:text-emerald-300/90",
       dotClass: "bg-emerald-500 dark:bg-emerald-300/90",
       pulse: false,
+      icon: "done",
     };
   }
 

@@ -45,19 +45,14 @@ import {
   CheckIcon,
   CircleAlertIcon,
   CircleCheckIcon,
-  CircleDashedIcon,
-  CircleDotDashedIcon,
   ClockIcon,
   FolderGit2Icon,
   GitBranchIcon,
-  MessageCircleQuestionIcon,
   PinIcon,
   PinOffIcon,
-  ShieldQuestionIcon,
   SquarePenIcon,
   TerminalIcon,
   Undo2Icon,
-  UserRoundIcon,
   XIcon,
 } from "lucide-react";
 import {
@@ -92,6 +87,7 @@ import { formatRelativeTime, parseTimestampDate } from "../../timestampFormat";
 import type { SidebarThreadSummary } from "../../types";
 import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
 import { cn } from "~/lib/utils";
+import { THREAD_STATUS_ICONS } from "../StatusGlyphs";
 import { textDirection } from "~/textDirection";
 import { EnvironmentMachineIcon } from "../EnvironmentMachineIcon";
 import {
@@ -583,19 +579,8 @@ const dropVerbBadge: Record<SidebarDropVerb, ReactNode> = {
   ),
 };
 
-const TOP_STATUS_ICONS = {
-  working: CircleDashedIcon,
-  waiting: CircleDotDashedIcon,
-  input: MessageCircleQuestionIcon,
-  request: UserRoundIcon,
-  approval: ShieldQuestionIcon,
-  failed: CircleAlertIcon,
-  done: CircleCheckIcon,
-  woke: AlarmClockIcon,
-} as const;
-
-function TopStatusIcon(props: { icon: keyof typeof TOP_STATUS_ICONS; className: string }) {
-  const Icon = TOP_STATUS_ICONS[props.icon];
+function TopStatusIcon(props: { icon: keyof typeof THREAD_STATUS_ICONS; className: string }) {
+  const Icon = THREAD_STATUS_ICONS[props.icon];
   return <Icon aria-hidden className={cn("shrink-0", props.className)} />;
 }
 

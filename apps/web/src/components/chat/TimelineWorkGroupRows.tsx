@@ -32,6 +32,7 @@ import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
 import { Spinner } from "../ui/spinner";
 import { WorktreeSetupCard } from "./WorktreeSetupCard";
 import { cn } from "~/lib/utils";
+import { MatrixGlyph } from "../StatusGlyphs";
 import { type TimestampFormat } from "@t3tools/contracts/settings";
 import {
   TimelineRowCtx,
@@ -368,6 +369,7 @@ export function WorkingTimelineRow({ row }: { row: Extract<TimelineRow, { kind: 
   return (
     <div className="border-b border-border/60 pb-2 pt-1">
       <div className="flex h-6 min-w-0 items-baseline gap-2 px-1 text-sm leading-relaxed text-muted-foreground tabular-nums">
+        <MatrixGlyph aria-hidden className="size-3.5 shrink-0 self-center" />
         <span
           ref={shimmer ? observeVisibleAnimation : undefined}
           className="relative shrink-0 overflow-hidden whitespace-nowrap"

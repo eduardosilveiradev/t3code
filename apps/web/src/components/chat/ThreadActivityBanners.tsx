@@ -17,11 +17,10 @@ import { formatDuration } from "@t3tools/shared/orchestrationTimingCopy";
 import * as DateTime from "effect/DateTime";
 import { msg, T, Var } from "gt-react";
 import {
-  CircleDashedIcon,
   CircleStopIcon,
+  ClipboardListIcon,
   GitBranchIcon,
   MessageCircleIcon,
-  ShieldQuestionIcon,
   TargetIcon,
   TerminalIcon,
   TriangleAlertIcon,
@@ -30,6 +29,7 @@ import { Fragment } from "react";
 import { m, type MessageResolver } from "~/i18n/messages";
 import { tickTextContent } from "~/lib/tickTextContent";
 import { BackgroundWorkDetails } from "./BackgroundWorkDetails";
+import { WaitingDotsGlyph } from "../StatusGlyphs";
 import { Button, InlineButton } from "../ui/button";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "../ui/tooltip";
 import { Popover, PopoverPopup, PopoverTrigger } from "../ui/popover";
@@ -65,7 +65,7 @@ export function childInputNowItem(
     id: `child-input:${first.id}`,
     // The only line at the end of the timeline that needs you gets the info color.
     icon: first.hasPendingApprovals ? (
-      <ShieldQuestionIcon className="text-info-foreground" />
+      <ClipboardListIcon className="text-info-foreground" />
     ) : (
       <MessageCircleIcon className="text-info-foreground" />
     ),
@@ -244,7 +244,7 @@ export function backgroundWorkNowItem(
   const startedAtMs = only?.startedAtMs ?? null;
   return {
     id: `background-work:${input.threadId}`,
-    icon: rows.every(isCommand) ? <TerminalIcon /> : <CircleDashedIcon />,
+    icon: rows.every(isCommand) ? <TerminalIcon /> : <WaitingDotsGlyph />,
     title:
       only && typeof only.label !== "string" && only.task.label !== only.task.kind ? (
         <>

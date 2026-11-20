@@ -3,7 +3,7 @@ import {
   fullAccessOverrideExplanation,
 } from "@t3tools/client-runtime/state/thread-requests";
 import { msg, T, useMessages } from "gt-react";
-import { ShieldIcon } from "lucide-react";
+import { ClipboardListIcon } from "lucide-react";
 import { memo, use } from "react";
 import { type PendingApproval } from "../../session-logic";
 import { InlineButton } from "../ui/button";
@@ -85,7 +85,7 @@ export const TimelinePendingApprovalRow = memo(function TimelinePendingApprovalR
           {canRespond ? (
             <>
               <span className="inline-flex items-center gap-1 text-warning">
-                <ShieldIcon aria-hidden className="size-3 shrink-0" />
+                <ClipboardListIcon aria-hidden className="size-3 shrink-0" />
                 <T>Waiting for approval</T>
               </span>
               {onRespondToApproval ? (

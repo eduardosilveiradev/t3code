@@ -23,6 +23,7 @@ import { TerminalIcon } from "lucide-react";
 import { m, type MessageResolver } from "../i18n/messages";
 import { useEnvironment, usePrimaryEnvironmentId } from "../state/environments";
 import { EnvironmentMachineIcon } from "./EnvironmentMachineIcon";
+import { THREAD_STATUS_ICONS } from "./StatusGlyphs";
 import { useProject } from "../state/entities";
 import {
   pullRequestListLines,
@@ -809,6 +810,7 @@ function ThreadStatusLabel({
 }) {
   const m = useMessages();
   const label = m(status.label);
+  const StatusIcon = THREAD_STATUS_ICONS[status.icon];
   if (compact) {
     return (
       <Tooltip>
@@ -843,11 +845,7 @@ function ThreadStatusLabel({
           />
         }
       >
-        <span
-          className={`h-1.5 w-1.5 rounded-full ${status.dotClass} ${
-            status.pulse ? "motion-safe:animate-status-pulse" : ""
-          }`}
-        />
+        <StatusIcon aria-hidden className="size-3 shrink-0 text-current" />
         <span className="hidden md:inline">{label}</span>
       </TooltipTrigger>
       <TooltipPopup side="top">{label}</TooltipPopup>
