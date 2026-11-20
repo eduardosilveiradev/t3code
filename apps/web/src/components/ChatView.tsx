@@ -3537,7 +3537,7 @@ export default function ChatView(props: ChatViewProps) {
   const content = (
     <div
       ref={setWorkspaceLayoutElement}
-      className="relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background"
+      className="workspace-surface relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background"
     >
       {embedded ? null : (
         <DeviceSetupDialogHost
@@ -3646,7 +3646,7 @@ export default function ChatView(props: ChatViewProps) {
             />
             <div
               {...conversationArea}
-              className="relative flex min-h-0 flex-1 flex-col bg-background"
+              className="workspace-surface relative flex min-h-0 flex-1 flex-col bg-background"
             >
               <WorkspaceMutationIdContext value={workspaceMutationId}>
                 <ThreadTimeline
@@ -3811,6 +3811,7 @@ export default function ChatView(props: ChatViewProps) {
                   ) : null}
                   <div
                     ref={draftHeroComposerAnchorRef}
+                    data-composer-anchor
                     className="relative z-10"
                     style={
                       forceExpandedMobileComposer

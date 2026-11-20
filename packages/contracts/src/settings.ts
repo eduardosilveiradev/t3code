@@ -209,6 +209,36 @@ export const EnvironmentIdentificationMode = Schema.Literals([
 export type EnvironmentIdentificationMode = typeof EnvironmentIdentificationMode.Type;
 export const DEFAULT_ENVIRONMENT_IDENTIFICATION_MODE: EnvironmentIdentificationMode = "artwork";
 
+/** Dithered artwork painted behind the main workspace pane. */
+/** The photo backdrops (NASA photos from orbit) come first after "none"; aurora and ember are generated. */
+export const WORKSPACE_BACKDROP_PHOTOS = [
+  "horizon",
+  "sunset-limb",
+  "red-sun",
+  "sunrise-bands",
+  "bright-limb",
+  "crescent",
+] as const;
+export const WorkspaceBackdrop = Schema.Literals([
+  "none",
+  ...WORKSPACE_BACKDROP_PHOTOS,
+  "aurora",
+  "ember",
+]);
+export type WorkspaceBackdrop = typeof WorkspaceBackdrop.Type;
+export const DEFAULT_WORKSPACE_BACKDROP: WorkspaceBackdrop = "none";
+/** Dither cell size for the photo backdrop in half CSS pixels: 0 is no dither, 5 is 2.5px. */
+export const MIN_WORKSPACE_BACKDROP_DITHER = 0;
+export const MAX_WORKSPACE_BACKDROP_DITHER = 8;
+export const WorkspaceBackdropDither = Schema.Int.check(
+  Schema.isBetween({
+    minimum: MIN_WORKSPACE_BACKDROP_DITHER,
+    maximum: MAX_WORKSPACE_BACKDROP_DITHER,
+  }),
+);
+export type WorkspaceBackdropDither = typeof WorkspaceBackdropDither.Type;
+export const DEFAULT_WORKSPACE_BACKDROP_DITHER: WorkspaceBackdropDither = 5;
+
 export const SnapShotKeyChord = KeybindingShortcut.check(
   Schema.makeFilter(
     (shortcut) =>
@@ -494,6 +524,12 @@ export const ClientSettingsSchema = Schema.Struct({
   ),
   glassOpacity: GlassOpacity.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_GLASS_OPACITY)),
+  ),
+  workspaceBackdrop: WorkspaceBackdrop.pipe(
+    Schema.withDecodingDefault(Effect.succeed(DEFAULT_WORKSPACE_BACKDROP)),
+  ),
+  workspaceBackdropDither: WorkspaceBackdropDither.pipe(
+    Schema.withDecodingDefault(Effect.succeed(DEFAULT_WORKSPACE_BACKDROP_DITHER)),
   ),
   fontSizeInterface: InterfaceFontSize.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_INTERFACE_FONT_SIZE)),
@@ -2136,6 +2172,8 @@ export const ClientSettingsPatch = Schema.Struct({
   diffLayout: Schema.optionalKey(DiffLayout),
   environmentIdentificationMode: Schema.optionalKey(EnvironmentIdentificationMode),
   glassOpacity: Schema.optionalKey(GlassOpacity),
+  workspaceBackdrop: Schema.optionalKey(WorkspaceBackdrop),
+  workspaceBackdropDither: Schema.optionalKey(WorkspaceBackdropDither),
   onboardingCompletedAt: Schema.optionalKey(Schema.NullOr(Schema.String)),
   fontSizeInterface: Schema.optionalKey(InterfaceFontSize),
   fontSizePrompt: Schema.optionalKey(PromptFontSize),

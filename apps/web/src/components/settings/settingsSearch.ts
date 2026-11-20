@@ -367,6 +367,15 @@ export const SETTINGS_SEARCH_ITEMS = [
     searchTerms: [msg("transparent transparency solid menus dialogs composer")],
   },
   {
+    id: "workspace-backdrop",
+    // oxlint-disable-next-line t3code/no-untranslated-copy -- this build's own backdrop section ships in English only
+    title: "Background",
+    to: "/settings/appearance",
+    searchTerms: [
+      "workspace backdrop dither dithered wallpaper artwork photo nasa space earth horizon sunset sunrise crescent moon aurora ember",
+    ],
+  },
+  {
     id: "diff-color-scheme",
     title: msg("Diff colors"),
     to: "/settings/diffs",

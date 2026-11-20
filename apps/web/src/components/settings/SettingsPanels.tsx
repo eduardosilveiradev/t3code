@@ -508,6 +508,12 @@ export function useSettingsRestore(onRestored?: () => void) {
     ...(settings.glassOpacity !== DEFAULT_UNIFIED_SETTINGS.glassOpacity
       ? [gt("Glass opacity")]
       : []),
+    ...(settings.workspaceBackdrop !== DEFAULT_UNIFIED_SETTINGS.workspaceBackdrop
+      ? ["Workspace backdrop"]
+      : []),
+    ...(settings.workspaceBackdropDither !== DEFAULT_UNIFIED_SETTINGS.workspaceBackdropDither
+      ? ["Backdrop dither"]
+      : []),
     ...(settings.diffColorScheme !== DEFAULT_UNIFIED_SETTINGS.diffColorScheme
       ? [gt("Diff colors")]
       : []),
@@ -735,6 +741,8 @@ export function useSettingsRestore(onRestored?: () => void) {
       screenReaderWindowTitle: DEFAULT_UNIFIED_SETTINGS.screenReaderWindowTitle,
       environmentIdentificationMode: DEFAULT_UNIFIED_SETTINGS.environmentIdentificationMode,
       glassOpacity: DEFAULT_UNIFIED_SETTINGS.glassOpacity,
+      workspaceBackdrop: DEFAULT_UNIFIED_SETTINGS.workspaceBackdrop,
+      workspaceBackdropDither: DEFAULT_UNIFIED_SETTINGS.workspaceBackdropDither,
       panelAnimationDurationMs: DEFAULT_UNIFIED_SETTINGS.panelAnimationDurationMs,
       sidebarProjectGroupingMode: DEFAULT_UNIFIED_SETTINGS.sidebarProjectGroupingMode,
       sidebarProjectSortOrder: DEFAULT_UNIFIED_SETTINGS.sidebarProjectSortOrder,

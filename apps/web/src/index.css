@@ -16,6 +16,50 @@
   }
 }
 
+/* Desktop page changes (router.ts, type t3-page). The sidebar and the backdrop stay live in the
+   root, so the backdrop's own blur transition plays underneath. Each part of the pane snapshots on
+   its own: the old one lifts away, the new one rises in out of a soft blur. The composer has its
+   own name, so it travels from where it was to where it goes instead of fading. */
+html:active-view-transition-type(t3-page) {
+  [data-slot="sidebar-inset"] > :not(.workspace-backdrop) {
+    view-transition-name: match-element;
+    view-transition-class: t3-page;
+  }
+  [data-composer-anchor] {
+    view-transition-name: t3-composer;
+  }
+}
+html:active-view-transition-type(t3-page)::view-transition-old(root),
+html:active-view-transition-type(t3-page)::view-transition-new(root) {
+  animation: none;
+}
+html:active-view-transition-type(t3-page)::view-transition-group(*.t3-page) {
+  animation: none;
+}
+html:active-view-transition-type(t3-page)::view-transition-old(*.t3-page) {
+  animation: t3-page-out 180ms var(--ease-out-strong) both;
+}
+html:active-view-transition-type(t3-page)::view-transition-new(*.t3-page) {
+  animation: t3-page-in 460ms var(--ease-out-strong) both;
+}
+html:active-view-transition-type(t3-page)::view-transition-group(t3-composer) {
+  animation-duration: 460ms;
+  animation-timing-function: var(--ease-in-out-strong);
+}
+@keyframes t3-page-out {
+  to {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+@keyframes t3-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(4px);
+  }
+}
+
 /* On mobile, morph the expanded hero composer into the compact docked
    composer while it moves; the rest of the app remains visually stationary. */
 html[data-mobile-composer-route-transition="true"]::view-transition-old(root),
@@ -195,6 +239,8 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   --inset-shadow-control-highlight: 0 1px rgb(255 255 255 / 16%);
   --inset-shadow-control-pressed: 0 1px rgb(0 0 0 / 8%);
   --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
   /* The composer's elevation: a soft drop pulled in under the surface, shared
      by the composer, its context strip and attached banners. */
   --shadow-composer: 0 1px 2px rgb(0 0 0 / 5%);
@@ -1132,6 +1178,208 @@ html[data-mobile-composer-route-transition="true"]::view-transition-old(t3-mobil
   background-image: var(--surface-grain);
   background-repeat: repeat;
   background-size: var(--surface-grain-size);
+}
+
+/* Dithered workspace backdrop (Appearance → Workspace backdrop). The main pane becomes
+   its own stacking context so the art paints above the pane's background and below
+   every child; the chat surfaces that normally repaint that background go clear. */
+[data-slot="sidebar-inset"]:has(> .workspace-backdrop) {
+  isolation: isolate;
+}
+[data-slot="sidebar-inset"]:has(> .workspace-backdrop) .workspace-surface {
+  background-color: transparent;
+}
+.workspace-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  opacity: 0.45;
+  /* Muted text on the light background has almost no contrast headroom (4.7:1), so in
+     light mode the art stays out of the reading column entirely. */
+  mask-image: linear-gradient(to right, #000 12%, transparent 30%, transparent 70%, #000 88%);
+}
+/* Blurred behind an open thread, clear on the new chat page. The blur is a static layer over
+   the canvas that fades in, so the change costs an opacity transition, not a re-blur per frame.
+   Each route mounts its own pane, so a new backdrop starts from the state the last one left
+   (data-was-blurred) and transitions from there. */
+.workspace-backdrop-blur {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  transition: opacity 700ms var(--ease-in-out-strong);
+}
+[data-slot="sidebar-inset"]:has([data-assistant-citation-viewport])
+  > .workspace-backdrop
+  .workspace-backdrop-blur {
+  opacity: 1;
+}
+/* Same selector weight as the rule above, or it would win over the starting style. */
+@starting-style {
+  [data-slot="sidebar-inset"]:has([data-assistant-citation-viewport])
+    > .workspace-backdrop:not([data-was-blurred])
+    .workspace-backdrop-blur {
+    opacity: 0;
+  }
+  .workspace-backdrop[data-was-blurred] .workspace-backdrop-blur {
+    opacity: 1;
+  }
+}
+/* The picture also eases back a touch as it blurs, so the thread reads as a layer in front. */
+@media (prefers-reduced-motion: no-preference) {
+  .workspace-backdrop-canvas {
+    transition: transform 700ms var(--ease-in-out-strong);
+  }
+  [data-slot="sidebar-inset"]:has([data-assistant-citation-viewport])
+    > .workspace-backdrop
+    .workspace-backdrop-canvas {
+    transform: scale(1.04);
+  }
+  @starting-style {
+    [data-slot="sidebar-inset"]:has([data-assistant-citation-viewport])
+      > .workspace-backdrop:not([data-was-blurred])
+      .workspace-backdrop-canvas {
+      transform: none;
+    }
+    .workspace-backdrop[data-was-blurred] .workspace-backdrop-canvas {
+      transform: scale(1.04);
+    }
+  }
+  /* New chat and an open thread swap in place: the incoming one fades in. Opacity only: moving or
+     filtering the scroll viewport throws off its scroll anchoring while the thread lays out. */
+  [data-assistant-citation-viewport],
+  [data-thread-empty] {
+    transition: opacity 450ms var(--ease-out-strong);
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-assistant-citation-viewport],
+  [data-thread-empty] {
+    transition: opacity 300ms ease;
+    @starting-style {
+      opacity: 0;
+    }
+  }
+}
+/* The row under the composer (environment, worktree, branch) has no surface of its own; over the
+   art its ghost buttons would sit on the picture, so it gets the composer's frosted glass. */
+[data-slot="sidebar-inset"]:has(> .workspace-backdrop) [data-slot="composer-context-strip"] {
+  margin-top: 0.375rem;
+  padding-block: 0.25rem;
+  border-radius: 0.75rem;
+  background: color-mix(in oklab, var(--background) var(--glass-opacity), transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+}
+.dark .workspace-backdrop {
+  opacity: 0.9;
+  mask-image: none;
+}
+/* The photo is already toned to Devin's panel, so in dark mode it shows at full strength. */
+.dark .workspace-backdrop:has(> [data-photo]),
+.dark .backdrop-preview .workspace-backdrop-canvas[data-photo] {
+  opacity: 1;
+}
+/* Each 3px cell (WORKSPACE_BACKDROP_CELL_PX) is a solid block of device pixels; the mask cuts it
+   to a 2px dot with a 1px gap, which is what reads as dither rather than blur. */
+.workspace-backdrop-canvas {
+  display: block;
+  image-rendering: pixelated;
+  mask-image:
+    linear-gradient(to right, #000 2px, transparent 2px),
+    linear-gradient(to bottom, #000 2px, transparent 2px);
+  mask-size: 3px 3px;
+  mask-composite: intersect;
+}
+/* The photo is solid cells in a 2x2 checker, as Devin's panel; no dot gaps. */
+.workspace-backdrop-canvas[data-photo] {
+  mask-image: none;
+}
+@media (prefers-contrast: more), (forced-colors: active) {
+  .workspace-backdrop {
+    display: none;
+  }
+  [data-slot="sidebar-inset"]:has(> .workspace-backdrop) .workspace-surface {
+    background-color: var(--background);
+  }
+}
+
+/* Settings → Background: one card per choice, each with a live preview of the art. */
+.backdrop-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 1rem;
+  border: 0;
+  min-inline-size: 0;
+}
+.backdrop-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.5rem 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.875rem;
+  cursor: pointer;
+  transition-property: border-color, box-shadow;
+  transition-duration: 150ms;
+}
+@media (hover: hover) {
+  .backdrop-option:hover {
+    border-color: color-mix(in srgb, var(--foreground) 30%, var(--border));
+  }
+}
+.backdrop-option[data-selected] {
+  border-color: var(--foreground);
+  box-shadow: 0 0 0 1px var(--foreground);
+}
+.backdrop-option:has(:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.backdrop-preview {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  background: var(--background);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.backdrop-preview .workspace-backdrop-canvas {
+  opacity: 0.45;
+}
+.dark .backdrop-preview .workspace-backdrop-canvas {
+  opacity: 0.9;
+}
+.backdrop-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  padding-inline: 0.25rem;
+}
+.backdrop-option-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.backdrop-option-detail,
+.backdrop-note {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+}
+.backdrop-note {
+  padding: 0 1rem 1rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .backdrop-option {
+    transition: none;
+  }
 }
 
 /* Suppress all transitions during theme changes */

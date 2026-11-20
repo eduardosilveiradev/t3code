@@ -16,6 +16,7 @@ import {
   SheetTitle,
 } from "~/components/ui/sheet";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "~/components/ui/tooltip";
+import { WorkspaceBackdrop } from "~/components/WorkspaceBackdrop";
 import { useResizeDrag } from "~/hooks/useResizeDrag";
 import { useMediaQuery } from "~/hooks/useMediaQuery";
 import { useClientSettings } from "~/hooks/useSettings";
@@ -767,7 +768,7 @@ function SidebarInput({ className, ...props }: Omit<InputProps, "unstyled" | "va
   );
 }
 
-function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
+function SidebarInset({ className, children, ...props }: React.ComponentProps<"main">) {
   return (
     <main
       className={cn(
@@ -777,7 +778,10 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
       )}
       data-slot="sidebar-inset"
       {...props}
-    />
+    >
+      <WorkspaceBackdrop />
+      {children}
+    </main>
   );
 }
 
