@@ -1,5 +1,5 @@
 import { pipe } from "effect/Function";
-import { THEME_CSS_MAX_LENGTH, type EnvironmentTheme } from "@t3tools/contracts";
+import { EnvironmentTheme, THEME_CSS_MAX_LENGTH } from "@t3tools/contracts";
 import * as Equal from "effect/Equal";
 import * as Option from "effect/Option";
 import * as Schema from "effect/Schema";
@@ -35,6 +35,8 @@ import { appAtomRegistry, subscribeAtomChanges } from "./rpc/atomRegistry";
 import { applyThemeBackground } from "./themeBackground";
 import { applyThemeCss } from "./themeCss";
 import { themeServerEnvironmentThemesAtom } from "./state/server";
+import podiumThemeCss from "./themes/podium.css?raw";
+import podiumThemeFile from "./themes/podium.json";
 
 export { EMBER_THEME, GROVE_THEME, IRIS_THEME, OCEAN_THEME, T3_CHAT_THEME, THEME_COLOR_ROLES };
 export type { ThemeAppearance, ThemeColorRole, ThemeColors, ThemeDefinition, ThemeVariants };
@@ -1226,7 +1228,19 @@ export function updateThemeColorFamily(
   }
 }
 
-const BUILT_IN_THEME_DEFINITIONS: ReadonlyArray<ThemeDefinition> = BUILT_IN_THEMES;
+/** Themes this build ships beside the built-ins, written in the published theme-file format. */
+export const BUNDLED_THEMES: ReadonlyArray<ThemeDefinition> = publishedThemeDefinitions([
+  Schema.decodeUnknownSync(EnvironmentTheme)({
+    id: "podium",
+    ...podiumThemeFile,
+    css: podiumThemeCss,
+  }),
+]);
+
+const BUILT_IN_THEME_DEFINITIONS: ReadonlyArray<ThemeDefinition> = [
+  ...BUILT_IN_THEMES,
+  ...BUNDLED_THEMES,
+];
 
 export function getThemeDefinition(theme: ThemePreference): ThemeDefinition | null {
   const themeId = themeIdFromPreference(theme);

@@ -6,7 +6,7 @@ import { m } from "../i18n/messages";
 import { useCustomThemes } from "../hooks/useCustomThemes";
 import { useEnvironmentThemeDefinitions } from "../hooks/useEnvironmentTheme";
 import { useTheme } from "../hooks/useTheme";
-import { getThemeDefinition } from "../themePalette";
+import { BUNDLED_THEMES, getThemeDefinition } from "../themePalette";
 import {
   ADDON_ICON_CLASS,
   ITEM_ICON_CLASS,
@@ -45,7 +45,7 @@ function useThemeCards() {
   const seen = new Set<string>();
   return [
     ...STANDARD_THEME_CARDS.map((card) => ({ ...card, id: null })),
-    ...[...BUILT_IN_THEMES, ...customThemes, ...environmentThemes]
+    ...[...BUILT_IN_THEMES, ...BUNDLED_THEMES, ...customThemes, ...environmentThemes]
       .filter((definition) => {
         if (seen.has(definition.id)) return false;
         seen.add(definition.id);

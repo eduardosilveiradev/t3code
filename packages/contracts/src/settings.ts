@@ -1577,7 +1577,7 @@ export const ServerSettings = Schema.Struct({
   backgroundActivityProfile: BackgroundActivityProfile.pipe(
     Schema.withDecodingDefault(Effect.succeed(DEFAULT_BACKGROUND_ACTIVITY_PROFILE)),
   ),
-  defaultTheme: DefaultThemePreference.pipe(Schema.withDecodingDefault(Effect.succeed(""))),
+  defaultTheme: DefaultThemePreference.pipe(Schema.withDecodingDefault(Effect.succeed("podium"))),
   /** Distinguishes repeated sets of the same theme so clients apply each one. */
   defaultThemeSetAt: Schema.String.check(Schema.isMaxLength(64)).pipe(
     Schema.withDecodingDefault(Effect.succeed("")),
