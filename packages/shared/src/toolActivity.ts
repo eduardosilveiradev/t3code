@@ -48,7 +48,9 @@ export type DynamicToolTitle =
   | { readonly kind: "title"; readonly title: string }
   | { readonly kind: "computer-use" }
   | { readonly kind: "run-javascript" }
-  | { readonly kind: "skill"; readonly name: string };
+  | { readonly kind: "skill"; readonly name: string }
+  | { readonly kind: "tool-search" }
+  | { readonly kind: "advisor" };
 
 export function describeDynamicToolTitle(
   toolName: string | null | undefined,
@@ -67,6 +69,8 @@ export function describeDynamicToolTitle(
       ? { kind: "computer-use" }
       : { kind: "run-javascript" };
   }
+  if (toolName === "ToolSearch") return { kind: "tool-search" };
+  if (toolName === "advisor") return { kind: "advisor" };
   const skill = claudeSkillInvocation(toolName, input);
   return skill === undefined ? undefined : { kind: "skill", name: skill.name };
 }
@@ -88,6 +92,10 @@ export function dynamicToolTitle(
       return "Run JavaScript";
     case "skill":
       return `Skill: ${title.name}`;
+    case "tool-search":
+      return "Search tools";
+    case "advisor":
+      return "Ask advisor";
   }
 }
 

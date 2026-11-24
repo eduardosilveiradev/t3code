@@ -63,6 +63,7 @@ import { idleCompactionOf, isCompactionCommandMessage, RunId, ThreadId } from "@
 import {
   classifyToolActivity,
   collectToolFilePaths,
+  describeDynamicToolTitle,
   isJavaScriptReplTool,
 } from "@t3tools/shared/toolActivity";
 import {
@@ -117,8 +118,10 @@ export interface ThreadFeedActivity {
     | "search"
     | "stop"
     | "hammer"
+    | "lightbulb"
     | "lock"
     | "message"
+    | "package-search"
     | "warning"
     | "wrench"
     | "zap";
@@ -603,8 +606,13 @@ function itemIcon(item: OrchestrationV2TurnItem): ThreadFeedActivity["icon"] {
     case "user_message":
     case "assistant_message":
       return "message";
-    case "dynamic_tool":
-      return isJavaScriptReplTool(item.toolName) ? "code" : "wrench";
+    case "dynamic_tool": {
+      if (isJavaScriptReplTool(item.toolName)) return "code";
+      const kind = describeDynamicToolTitle(item.toolName, item.input)?.kind;
+      if (kind === "tool-search") return "package-search";
+      if (kind === "advisor") return "lightbulb";
+      return "wrench";
+    }
     case "subagent":
       return "hammer";
     case "system_notice":

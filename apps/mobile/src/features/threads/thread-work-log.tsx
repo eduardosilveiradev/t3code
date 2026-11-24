@@ -416,10 +416,14 @@ function workRowSymbolName(icon: ThreadFeedActivity["icon"]): WorkContentIcon {
       return "stop.fill";
     case "hammer":
       return { ios: "hammer", android: "construction" };
+    case "lightbulb":
+      return { ios: "lightbulb", android: "lightbulb" };
     case "lock":
       return { ios: "lock", android: "lock" };
     case "message":
       return { ios: "bubble.left", android: "chat_bubble" };
+    case "package-search":
+      return { ios: "text.magnifyingglass", android: "manage_search" };
     case "warning":
       return { ios: "xmark", android: "close" };
     case "wrench":

@@ -4,7 +4,7 @@ import {
   resolveWorkEntryToolPresentation,
   toolGroupAction,
 } from "@t3tools/client-runtime/work-log/presentation";
-import { isJavaScriptReplTool } from "@t3tools/shared/toolActivity";
+import { describeDynamicToolTitle, isJavaScriptReplTool } from "@t3tools/shared/toolActivity";
 import { formatWorkspaceRelativePath } from "../../filePathDisplay";
 import { m, type MessageResolver } from "../../i18n/messages";
 import { type TimelineWorkEntry, type TimelineRow } from "./timelineRowContext";
@@ -182,11 +182,13 @@ export function workEntryIconName(workEntry: TimelineWorkEntry): WorkEntryIconNa
   }
   if (workEntry.itemType === "todo_list") return "list-todo";
   if (workEntry.toolSurface) return workEntry.toolSurface;
-  if (
-    workEntry.structuredPayload?.type === "dynamic_tool" &&
-    isJavaScriptReplTool(workEntry.structuredPayload.toolName)
-  )
-    return "code";
+  if (workEntry.structuredPayload?.type === "dynamic_tool") {
+    const { toolName, input } = workEntry.structuredPayload;
+    if (isJavaScriptReplTool(toolName)) return "code";
+    const kind = describeDynamicToolTitle(toolName, input)?.kind;
+    if (kind === "tool-search") return "package-search";
+    if (kind === "advisor") return "lightbulb";
+  }
   const toolPresentation = resolveWorkEntryToolPresentation(workEntry, undefined, m);
   if (toolPresentation) return toolPresentation.icon;
   const action = toolGroupAction(workEntry);

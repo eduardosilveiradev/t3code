@@ -22,6 +22,10 @@ export function dynamicToolTitle(
       return resolve(msg("Run JavaScript"));
     case "skill":
       return resolve(msg("Skill: {name}", { name: title.name }));
+    case "tool-search":
+      return resolve(msg("Search tools"));
+    case "advisor":
+      return resolve(msg("Ask advisor"));
   }
 }
 

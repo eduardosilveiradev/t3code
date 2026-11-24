@@ -27,6 +27,7 @@ import IconBellRinging from "@tabler/icons-react-native/IconBellRinging";
 import IconBolt from "@tabler/icons-react-native/IconBolt";
 import IconBox from "@tabler/icons-react-native/IconBox";
 import IconBrain from "@tabler/icons-react-native/IconBrain";
+import IconBulb from "@tabler/icons-react-native/IconBulb";
 import IconCamera from "@tabler/icons-react-native/IconCamera";
 import IconCar from "@tabler/icons-react-native/IconCar";
 import IconChartBar from "@tabler/icons-react-native/IconChartBar";
@@ -81,6 +82,7 @@ import IconHome from "@tabler/icons-react-native/IconHome";
 import IconInfoCircle from "@tabler/icons-react-native/IconInfoCircle";
 import IconKeyboard from "@tabler/icons-react-native/IconKeyboard";
 import IconKeyboardHide from "@tabler/icons-react-native/IconKeyboardHide";
+import IconListSearch from "@tabler/icons-react-native/IconListSearch";
 import IconLock from "@tabler/icons-react-native/IconLock";
 import IconLayoutColumns from "@tabler/icons-react-native/IconLayoutColumns";
 import IconLayoutSidebar from "@tabler/icons-react-native/IconLayoutSidebar";
@@ -343,7 +345,9 @@ const ANDROID_ICON_BY_MATERIAL_NAME = {
   keyboard_arrow_down: IconChevronDown,
   keyboard_arrow_up: IconChevronUp,
   keyboard_hide: IconKeyboardHide,
+  lightbulb: IconBulb,
   lock: IconLock,
+  manage_search: IconListSearch,
   more_vert: IconDotsVertical,
   merge: IconGitMerge,
   psychology: IconBrain,
